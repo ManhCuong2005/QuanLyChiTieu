@@ -58,9 +58,8 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
 
-    if (!kIsWeb) {
-      _initCamera();
-    }
+    // Initialize camera on ALL platforms (camera_web handles browser cameras via HTTPS)
+    _initCamera();
   }
 
   Future<void> _initCamera() async {
@@ -181,8 +180,8 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
   Future<void> _capturePhoto() async {
     if (_isCapturing) return;
 
-    // --- Mobile: use live CameraController ---
-    if (!kIsWeb && _cameraController != null && _isCameraInitialized) {
+    // Use live CameraController if initialized (works on mobile AND web via camera_web)
+    if (_cameraController != null && _isCameraInitialized) {
       setState(() => _isCapturing = true);
       try {
         final file = await _cameraController!.takePicture();
@@ -201,11 +200,11 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
       return;
     }
 
-    // --- Web or camera unavailable: open image picker ---
+    // Fallback: camera not available → open image picker
     setState(() => _isCapturing = true);
     try {
       final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,
+        source: ImageSource.gallery,
         maxWidth: 1600,
         maxHeight: 1600,
         imageQuality: 90,
@@ -214,12 +213,16 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
         _navigateToReview(imagePath: image.path);
       }
     } catch (e) {
-      // Camera truly not available — fall back to gallery
-      if (mounted) _pickFromGallery();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể chụp ảnh: $e. Vui lòng chọn từ thư viện.')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isCapturing = false);
     }
   }
+
 
   Future<void> _pickFromGallery() async {
     try {
@@ -476,8 +479,8 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
                             color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ),
-                    // Flash toggle (only on mobile with camera)
-                    if (!kIsWeb && _isCameraInitialized)
+                    // Flash toggle — show when camera is initialized
+                    if (_isCameraInitialized)
                       _iconBtn(
                         icon: _flashIcons[_flashModes.indexOf(_flashMode)],
                         onTap: _toggleFlash,
@@ -499,21 +502,6 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Web notice
-                    if (kIsWeb)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          '🌐 Web: Chọn ảnh từ thư viện hoặc dùng hóa đơn mẫu bên dưới',
-                          style: TextStyle(fontSize: 12, color: Colors.black87),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -598,30 +586,7 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
   }
 
   Widget _buildCameraPreview() {
-    // Web: show instruction background
-    if (kIsWeb) {
-      return Container(
-        color: const Color(0xFF111827),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.camera_alt_outlined,
-                  size: 72, color: Colors.white.withValues(alpha: 0.15)),
-              const SizedBox(height: 16),
-              Text(
-                'Chụp ảnh hóa đơn từ điện thoại\nhoặc chọn ảnh từ thư viện',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4), fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Mobile: camera not initialized
+    // Camera not yet initialized — loading or error
     if (!_isCameraInitialized || _cameraController == null) {
       return Container(
         color: Colors.black,
@@ -647,14 +612,30 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
                       icon: const Icon(Icons.refresh_rounded, color: Colors.white),
                       label: const Text('Thử lại', style: TextStyle(color: Colors.white)),
                     ),
+                    const SizedBox(height: 8),
+                    // Fallback to gallery if camera unavailable
+                    TextButton.icon(
+                      onPressed: _pickFromGallery,
+                      icon: const Icon(Icons.photo_library_rounded, color: Colors.white70),
+                      label: const Text('Chọn ảnh từ thư viện',
+                          style: TextStyle(color: Colors.white70)),
+                    ),
                   ],
                 )
-              : const CircularProgressIndicator(color: Color(0xFF6366F1)),
+              : const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(color: Color(0xFF6366F1)),
+                    SizedBox(height: 16),
+                    Text('Đang khởi động camera...',
+                        style: TextStyle(color: Colors.white54, fontSize: 13)),
+                  ],
+                ),
         ),
       );
     }
 
-    // Mobile: show live CameraPreview
+    // Camera ready — show live preview (works on both mobile & web via camera_web)
     return GestureDetector(
       onTapDown: _onTapToFocus,
       child: CameraPreview(_cameraController!),
