@@ -24,15 +24,15 @@ class DatabaseService extends ChangeNotifier {
         _expenses.sort((a, b) => b.date.compareTo(a.date));
       } catch (e) {
         debugPrint('Error parsing stored expenses: $e');
-        _loadSeedData();
+        _expenses = [];
       }
     } else {
-      // First time launch: load sample data for rich UI demonstration
-      _loadSeedData();
-      await _saveToDisk();
+      // First time launch: start with empty list
+      _expenses = [];
     }
     notifyListeners();
   }
+
 
   void _loadSeedData() {
     final now = DateTime.now();
