@@ -3,93 +3,95 @@ import 'package:flutter/material.dart';
 class ExpenseCategory {
   final String id;
   final String name;
+  final String englishName;
   final IconData icon;
   final Color color;
 
   const ExpenseCategory({
     required this.id,
     required this.name,
+    required this.englishName,
     required this.icon,
     required this.color,
   });
 
+  // 5 core categories required by project specifications:
+  // (Food, Study, Travel, Gear, Entertainment)
   static const ExpenseCategory food = ExpenseCategory(
     id: 'food',
     name: 'Ăn uống',
+    englishName: 'Food',
     icon: Icons.restaurant_rounded,
     color: Color(0xFFFF6B6B),
   );
 
-  static const ExpenseCategory shopping = ExpenseCategory(
-    id: 'shopping',
-    name: 'Mua sắm',
-    icon: Icons.shopping_bag_rounded,
-    color: Color(0xFF4ECDC4),
+  static const ExpenseCategory study = ExpenseCategory(
+    id: 'study',
+    name: 'Học tập',
+    englishName: 'Study',
+    icon: Icons.school_rounded,
+    color: Color(0xFFF59E0B),
   );
 
-  static const ExpenseCategory transport = ExpenseCategory(
-    id: 'transport',
+  static const ExpenseCategory travel = ExpenseCategory(
+    id: 'travel',
     name: 'Di chuyển',
+    englishName: 'Travel',
     icon: Icons.directions_car_rounded,
-    color: Color(0xFF45B7D1),
+    color: Color(0xFF3B82F6),
   );
 
-  static const ExpenseCategory bills = ExpenseCategory(
-    id: 'bills',
-    name: 'Hóa đơn',
-    icon: Icons.receipt_long_rounded,
-    color: Color(0xFFFFA07A),
+  static const ExpenseCategory gear = ExpenseCategory(
+    id: 'gear',
+    name: 'Thiết bị & Đồ dùng',
+    englishName: 'Gear',
+    icon: Icons.devices_rounded,
+    color: Color(0xFF10B981),
   );
 
   static const ExpenseCategory entertainment = ExpenseCategory(
     id: 'entertainment',
     name: 'Giải trí',
+    englishName: 'Entertainment',
     icon: Icons.sports_esports_rounded,
-    color: Color(0xFF9B59B6),
-  );
-
-  static const ExpenseCategory health = ExpenseCategory(
-    id: 'health',
-    name: 'Sức khỏe',
-    icon: Icons.medical_services_rounded,
-    color: Color(0xFF2ECC71),
-  );
-
-  static const ExpenseCategory education = ExpenseCategory(
-    id: 'education',
-    name: 'Học tập',
-    icon: Icons.school_rounded,
-    color: Color(0xFFF39C12),
+    color: Color(0xFF8B5CF6),
   );
 
   static const ExpenseCategory other = ExpenseCategory(
     id: 'other',
     name: 'Khác',
+    englishName: 'Other',
     icon: Icons.category_rounded,
-    color: Color(0xFF95A5A6),
+    color: Color(0xFF64748B),
   );
 
   static const List<ExpenseCategory> defaultCategories = [
     food,
-    shopping,
-    transport,
-    bills,
+    study,
+    travel,
+    gear,
     entertainment,
-    health,
-    education,
     other,
   ];
 
   static ExpenseCategory fromId(String id) {
     return defaultCategories.firstWhere(
       (cat) => cat.id.toLowerCase() == id.toLowerCase(),
-      orElse: () => other,
+      orElse: () {
+        // Backwards compatibility mapping
+        if (id == 'transport') return travel;
+        if (id == 'education') return study;
+        if (id == 'shopping' || id == 'bills') return gear;
+        return other;
+      },
     );
   }
 
   static ExpenseCategory fromName(String name) {
     return defaultCategories.firstWhere(
-      (cat) => cat.name.toLowerCase() == name.toLowerCase(),
+      (cat) =>
+          cat.name.toLowerCase() == name.toLowerCase() ||
+          cat.englishName.toLowerCase() == name.toLowerCase(),
       orElse: () => other,
     );
   }
@@ -97,6 +99,7 @@ class ExpenseCategory {
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
+        'englishName': englishName,
       };
 
   factory ExpenseCategory.fromJson(Map<String, dynamic> json) {

@@ -10,10 +10,14 @@ import '../services/database_service.dart';
 
 class ScanReceiptScreen extends StatefulWidget {
   final DatabaseService databaseService;
+  final String? initialImagePath;
+  final String? initialSampleText;
 
   const ScanReceiptScreen({
     super.key,
     required this.databaseService,
+    this.initialImagePath,
+    this.initialSampleText,
   });
 
   @override
@@ -36,6 +40,45 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
   ReceiptResult? _parsedResult;
   String? _pickedImagePath;
   bool _showRawText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialImagePath != null) {
+        _processInitialPath(widget.initialImagePath!);
+      } else if (widget.initialSampleText != null) {
+        _processSampleText(widget.initialSampleText!);
+      }
+    });
+  }
+
+  Future<void> _processInitialPath(String path) async {
+    setState(() {
+      _isProcessing = true;
+      _pickedImagePath = path;
+    });
+    final result = await OcrService.processReceiptFromPath(path);
+    _applyParsedResult(result);
+    if (mounted) {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
+  void _processSampleText(String text) {
+    setState(() {
+      _isProcessing = true;
+    });
+    final result = OcrService.processReceiptText(text);
+    _applyParsedResult(result);
+    if (mounted) {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
 
   @override
   void dispose() {

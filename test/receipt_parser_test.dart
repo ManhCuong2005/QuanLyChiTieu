@@ -63,7 +63,7 @@ Tien thua:                   27.000
       expect(result.transactionDate!.year, 2024);
       expect(result.transactionDate!.month, 11);
       expect(result.transactionDate!.day, 20);
-      expect(result.suggestedCategory, ExpenseCategory.shopping.id);
+      expect(result.suggestedCategory, ExpenseCategory.gear.id);
     });
 
     test('Correctly parses Circle K convenience store receipt', () {
@@ -86,7 +86,26 @@ Thank you for shopping!
       expect(result.merchantName, 'Circle K');
       expect(result.totalAmount, 40000.0);
       expect(result.transactionDate, isNotNull);
-      expect(result.suggestedCategory, ExpenseCategory.shopping.id);
+      expect(result.suggestedCategory, ExpenseCategory.gear.id);
+    });
+
+    test('Correctly parses Fahasa bookstore receipt as Study category', () {
+      const sampleFahasa = '''
+NHA SACH FAHASA
+Chi nhanh Nguyen Hue
+Ngay: 20/02/2025 16:50
+
+Sach Giao Trinh Flutter      150.000
+Vo ghi bai Sinh Vien          40.000
+
+Tong cong:                   190.000 VND
+''';
+
+      final result = ReceiptParser.parse(sampleFahasa);
+
+      expect(result.merchantName, 'Fahasa');
+      expect(result.totalAmount, 190000.0);
+      expect(result.suggestedCategory, ExpenseCategory.study.id);
     });
   });
 }

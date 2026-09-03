@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../services/database_service.dart';
 import '../widgets/expense_card.dart';
 import '../widgets/charts/custom_bar_chart.dart';
-import 'scan_receipt_screen.dart';
+import 'camera_viewfinder_screen.dart';
 import 'add_expense_screen.dart';
 import 'expense_list_screen.dart';
 import 'analytics_screen.dart';
@@ -404,7 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ScanReceiptScreen(databaseService: widget.databaseService),
+        builder: (_) => CameraViewfinderScreen(databaseService: widget.databaseService),
       ),
     );
   }

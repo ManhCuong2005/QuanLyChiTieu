@@ -346,7 +346,7 @@ class ReceiptParser {
   static String _suggestCategory(String? merchant, List<String> lines) {
     final fullText = '${merchant ?? ''} ${lines.join(' ')}'.toLowerCase();
 
-    // Food & Dining keywords
+    // 1. Food (Ăn uống)
     if (_containsAny(fullText, [
       'coffee', 'cafe', 'cà phê', 'tea', 'trà', 'restaurant', 'nhà hàng', 'quán',
       'bánh', 'food', 'kfc', 'lotteria', 'jollibee', 'pizza', 'phở', 'bún', 'cơm',
@@ -356,53 +356,38 @@ class ReceiptParser {
       return ExpenseCategory.food.id;
     }
 
-    // Shopping keywords
+    // 2. Study (Học tập)
     if (_containsAny(fullText, [
-      'mart', 'siêu thị', 'store', 'shop', 'winmart', 'circle k', 'familymart',
-      '7-eleven', 'bách hóa xanh', 'co.opmart', 'big c', 'lotte', 'quần áo',
-      'thời trang', 'zara', 'uniqlo', 'giày', 'túi', 'mỹ phẩm'
+      'fahasa', 'phương nam', 'nhà sách', 'sách', 'khóa học', 'học phí',
+      'đại học', 'trường', 'văn phòng phẩm', 'giáo trình', 'bút', 'vở'
     ])) {
-      return ExpenseCategory.shopping.id;
+      return ExpenseCategory.study.id;
     }
 
-    // Transport keywords
+    // 3. Travel (Di chuyển)
     if (_containsAny(fullText, [
       'xăng', 'petrolimex', 'petrol', 'grab', 'be', 'gojek', 'taxi', 'mai linh',
       'giao hàng', 'ship', 'bus', 'vé xe', 'vé máy bay', 'parking', 'giữ xe'
     ])) {
-      return ExpenseCategory.transport.id;
+      return ExpenseCategory.travel.id;
     }
 
-    // Bills & Utilities keywords
+    // 4. Gear (Thiết bị & Đồ dùng)
     if (_containsAny(fullText, [
-      'điện lực', 'evn', 'nước sinh hoạt', 'internet', 'viettel', 'vnpt', 'fpt',
-      'hóa đơn tiền điện', 'hóa đơn nước', 'truyền hình', 'phí quản lý'
+      'mart', 'siêu thị', 'store', 'shop', 'winmart', 'circle k', 'familymart',
+      '7-eleven', 'bách hóa xanh', 'co.opmart', 'big c', 'lotte', 'quần áo',
+      'thời trang', 'zara', 'uniqlo', 'thiết bị', 'điện tử', 'gear', 'chuột',
+      'tai nghe', 'phụ kiện', 'pharmacity', 'tiện ích', 'đồ dùng'
     ])) {
-      return ExpenseCategory.bills.id;
+      return ExpenseCategory.gear.id;
     }
 
-    // Entertainment keywords
+    // 5. Entertainment (Giải trí)
     if (_containsAny(fullText, [
       'cinema', 'cgv', 'bhd', 'lotte cinema', 'game', 'rạp chiếu phim', 'karaoke',
       'billiards', 'vé xem phim', 'tour', 'du lịch'
     ])) {
       return ExpenseCategory.entertainment.id;
-    }
-
-    // Health keywords
-    if (_containsAny(fullText, [
-      'pharmacity', 'long châu', 'nhà thuốc', 'bệnh viện', 'phòng khám', 'thuốc',
-      'y tế', 'nha khoa', 'bác sĩ'
-    ])) {
-      return ExpenseCategory.health.id;
-    }
-
-    // Education keywords
-    if (_containsAny(fullText, [
-      'fahasa', 'phương nam', 'nhà sách', 'sách', 'khóa học', 'học phí',
-      'đại học', 'trường', 'văn phòng phẩm'
-    ])) {
-      return ExpenseCategory.education.id;
     }
 
     return ExpenseCategory.other.id;
