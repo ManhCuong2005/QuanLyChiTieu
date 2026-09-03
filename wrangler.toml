@@ -1,6 +1,5 @@
 name = "quanlychitieu"
 compatibility_date = "2024-09-03"
-pages_build_output_dir = "./build/web"
 
 [assets]
 directory = "./build/web"
