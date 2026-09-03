@@ -1,5 +1,7 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/database_service.dart';
 import '../services/ocr_service.dart';
@@ -22,10 +24,31 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
   final _picker = ImagePicker();
   late AnimationController _scanLaserController;
 
+  // Camera state
+  CameraController? _cameraController;
+  List<CameraDescription> _cameras = [];
+  bool _isCameraInitialized = false;
+  bool _isCameraError = false;
+  String _cameraErrorMsg = '';
+  int _selectedCameraIndex = 0;
+
   // Camera settings state
-  int _flashMode = 0; // 0: Off, 1: On, 2: Auto
+  FlashMode _flashMode = FlashMode.off;
   Offset? _focusPoint;
   bool _showFocusRing = false;
+  bool _isCapturing = false;
+
+  static const List<FlashMode> _flashModes = [
+    FlashMode.off,
+    FlashMode.torch,
+    FlashMode.auto,
+  ];
+  static const List<IconData> _flashIcons = [
+    Icons.flash_off_rounded,
+    Icons.flash_on_rounded,
+    Icons.flash_auto_rounded,
+  ];
+  static const List<String> _flashLabels = ['Tắt', 'Bật', 'Tự động'];
 
   @override
   void initState() {
@@ -34,56 +57,167 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
+
+    if (!kIsWeb) {
+      _initCamera();
+    }
+  }
+
+  Future<void> _initCamera() async {
+    try {
+      _cameras = await availableCameras();
+      if (_cameras.isEmpty) {
+        setState(() {
+          _isCameraError = true;
+          _cameraErrorMsg = 'Không tìm thấy camera trên thiết bị này.';
+        });
+        return;
+      }
+      await _startCamera(_selectedCameraIndex);
+    } catch (e) {
+      setState(() {
+        _isCameraError = true;
+        _cameraErrorMsg = 'Không thể khởi động camera: $e';
+      });
+    }
+  }
+
+  Future<void> _startCamera(int index) async {
+    final oldController = _cameraController;
+    if (oldController != null) {
+      setState(() => _isCameraInitialized = false);
+      await oldController.dispose();
+    }
+
+    final controller = CameraController(
+      _cameras[index],
+      ResolutionPreset.high,
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.jpeg,
+    );
+    _cameraController = controller;
+
+    try {
+      await controller.initialize();
+      await controller.setFlashMode(_flashMode);
+      if (mounted) {
+        setState(() {
+          _isCameraInitialized = true;
+          _isCameraError = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCameraError = true;
+          _cameraErrorMsg = 'Lỗi khởi tạo camera: $e';
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
     _scanLaserController.dispose();
+    _cameraController?.dispose();
     super.dispose();
   }
 
-  void _onTapToFocus(TapDownDetails details) {
+  Future<void> _onTapToFocus(TapDownDetails details) async {
     setState(() {
       _focusPoint = details.localPosition;
       _showFocusRing = true;
     });
 
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) {
-        setState(() {
-          _showFocusRing = false;
-        });
+    if (_cameraController != null && _isCameraInitialized) {
+      try {
+        // Convert tap position to offset (0.0–1.0)
+        final renderBox = context.findRenderObject() as RenderBox?;
+        if (renderBox != null) {
+          final size = renderBox.size;
+          final offset = Offset(
+            details.localPosition.dx / size.width,
+            details.localPosition.dy / size.height,
+          );
+          await _cameraController!.setFocusPoint(offset);
+          await _cameraController!.setExposurePoint(offset);
+        }
+      } catch (_) {}
+    }
+
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) setState(() => _showFocusRing = false);
+    });
+  }
+
+  Future<void> _toggleFlash() async {
+    final currentIndex = _flashModes.indexOf(_flashMode);
+    final nextMode = _flashModes[(currentIndex + 1) % _flashModes.length];
+    setState(() => _flashMode = nextMode);
+
+    if (_cameraController != null && _isCameraInitialized) {
+      try {
+        await _cameraController!.setFlashMode(nextMode);
+      } catch (_) {}
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đèn flash: ${_flashLabels[_flashModes.indexOf(nextMode)]}'),
+          duration: const Duration(milliseconds: 800),
+          backgroundColor: const Color(0xFF374151),
+        ),
+      );
+    }
+  }
+
+  Future<void> _switchCamera() async {
+    if (_cameras.length < 2) return;
+    _selectedCameraIndex = (_selectedCameraIndex + 1) % _cameras.length;
+    await _startCamera(_selectedCameraIndex);
+  }
+
+  Future<void> _capturePhoto() async {
+    if (_isCapturing) return;
+
+    // --- Mobile: use live CameraController ---
+    if (!kIsWeb && _cameraController != null && _isCameraInitialized) {
+      setState(() => _isCapturing = true);
+      try {
+        final file = await _cameraController!.takePicture();
+        if (mounted) {
+          _navigateToReview(imagePath: file.path);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi chụp ảnh: $e')),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isCapturing = false);
       }
-    });
-  }
+      return;
+    }
 
-  void _toggleFlash() {
-    setState(() {
-      _flashMode = (_flashMode + 1) % 3;
-    });
-    final messages = ['Đèn flash: Tắt', 'Đèn flash: Bật', 'Đèn flash: Tự động'];
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(messages[_flashMode]),
-        duration: const Duration(milliseconds: 800),
-      ),
-    );
-  }
-
-  Future<void> _captureFromCamera() async {
+    // --- Web or camera unavailable: open image picker ---
+    setState(() => _isCapturing = true);
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
         maxWidth: 1600,
         maxHeight: 1600,
+        imageQuality: 90,
       );
       if (image != null && mounted) {
         _navigateToReview(imagePath: image.path);
       }
     } catch (e) {
-      if (mounted) {
-        _showSampleReceiptsDialog();
-      }
+      // Camera truly not available — fall back to gallery
+      if (mounted) _pickFromGallery();
+    } finally {
+      if (mounted) setState(() => _isCapturing = false);
     }
   }
 
@@ -93,13 +227,16 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
         source: ImageSource.gallery,
         maxWidth: 1600,
         maxHeight: 1600,
+        imageQuality: 90,
       );
       if (image != null && mounted) {
         _navigateToReview(imagePath: image.path);
       }
     } catch (e) {
       if (mounted) {
-        _showSampleReceiptsDialog();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể mở thư viện ảnh: $e')),
+        );
       }
     }
   }
@@ -117,6 +254,7 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
     );
   }
 
+  /// Only show sample receipts when user explicitly taps the demo button
   void _showSampleReceiptsDialog() {
     showModalBottomSheet(
       context: context,
@@ -135,17 +273,17 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
                 Icon(Icons.receipt_long_rounded, color: Color(0xFF6366F1)),
                 SizedBox(width: 10),
                 Text(
-                  'Chọn hóa đơn mẫu thực tế',
+                  'Hóa đơn mẫu thực tế (Demo)',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
-              'Dành cho kiểm thử Live Demo / Thiết bị không có camera:',
+              'Chọn để thử nghiệm bóc tách OCR mà không cần chụp ảnh:',
               style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             ...OcrService.sampleReceipts.map((sample) {
               return ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -158,7 +296,7 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
                   child: const Icon(Icons.receipt_rounded, color: Color(0xFF6366F1)),
                 ),
                 title: Text(sample['title']!, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('Tự động bóc tách hóa đơn ${sample['store']}'),
+                subtitle: Text('Hóa đơn ${sample['store']}'),
                 onTap: () {
                   Navigator.pop(ctx);
                   _navigateToReview(sampleText: sample['text']);
@@ -173,139 +311,110 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
 
   @override
   Widget build(BuildContext context) {
-    final flashIcons = [Icons.flash_off_rounded, Icons.flash_on_rounded, Icons.flash_auto_rounded];
-
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Camera Viewfinder Background with Tap-to-Focus
-          GestureDetector(
-            onTapDown: _onTapToFocus,
-            child: Container(
-              color: const Color(0xFF111827),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.camera_alt_outlined,
-                      size: 64,
-                      color: Colors.white.withValues(alpha: 0.15),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Camera Live Viewfinder',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        fontSize: 14,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
+          // ── 1. Camera Preview ──────────────────────────────────────
+          _buildCameraPreview(),
+
+          // ── 2. Framing Crop Overlay ────────────────────────────────
+          LayoutBuilder(builder: (context, constraints) {
+            final w = constraints.maxWidth;
+            final h = constraints.maxHeight;
+            final frameW = min(w * 0.85, 360.0);
+            final frameH = min(h * 0.58, 480.0);
+            final frameRect = Rect.fromCenter(
+              center: Offset(w / 2, h * 0.44),
+              width: frameW,
+              height: frameH,
+            );
+            return Stack(children: [
+              // Dark vignette
+              CustomPaint(
+                size: Size(w, h),
+                painter: _ViewfinderOverlayPainter(frameRect: frameRect),
               ),
-            ),
-          ),
-
-          // 2. Framing Crop Overlay with Darkened Cutout
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final height = constraints.maxHeight;
-              final frameWidth = min(width * 0.85, 360.0);
-              final frameHeight = min(height * 0.58, 480.0);
-              final frameRect = Rect.fromCenter(
-                center: Offset(width / 2, height * 0.44),
-                width: frameWidth,
-                height: frameHeight,
-              );
-
-              return Stack(
-                children: [
-                  // Mask Painter (Dark vignette outside the receipt box)
-                  CustomPaint(
-                    size: Size(width, height),
-                    painter: _ViewfinderOverlayPainter(frameRect: frameRect),
-                  ),
-
-                  // Animated Scanning Laser
-                  AnimatedBuilder(
-                    animation: _scanLaserController,
-                    builder: (context, child) {
-                      final laserY = frameRect.top + _scanLaserController.value * frameRect.height;
-                      return Positioned(
-                        left: frameRect.left + 8,
-                        top: laserY,
-                        width: frameRect.width - 16,
-                        height: 2.5,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Colors.transparent,
-                                Color(0xFF6366F1),
-                                Color(0xFF60A5FA),
-                                Color(0xFF6366F1),
-                                Colors.transparent,
-                              ],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF6366F1).withValues(alpha: 0.7),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Framing Corner Brackets
-                  Positioned.fromRect(
-                    rect: frameRect,
-                    child: CustomPaint(
-                      painter: _CornerBracketsPainter(
-                        color: const Color(0xFF6366F1),
-                      ),
-                    ),
-                  ),
-
-                  // Instruction Text above the frame
-                  Positioned(
-                    top: frameRect.top - 42,
-                    left: 20,
-                    right: 20,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.crop_free_rounded, size: 14, color: Colors.white70),
-                            SizedBox(width: 6),
-                            Text(
-                              'Căn chỉnh hóa đơn vào giữa khung hình',
-                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                            ),
+              // Scan laser
+              AnimatedBuilder(
+                animation: _scanLaserController,
+                builder: (context, child) {
+                  final laserY = frameRect.top + _scanLaserController.value * frameRect.height;
+                  return Positioned(
+                    left: frameRect.left + 8,
+                    top: laserY,
+                    width: frameRect.width - 16,
+                    height: 2.5,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            Color(0xFF6366F1),
+                            Color(0xFF60A5FA),
+                            Color(0xFF6366F1),
+                            Colors.transparent,
                           ],
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.7),
+                            blurRadius: 10,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
                     ),
+                  );
+                },
+              ),
+              // Corner brackets
+              Positioned.fromRect(
+                rect: frameRect,
+                child: CustomPaint(
+                  painter: _CornerBracketsPainter(color: const Color(0xFF6366F1)),
+                ),
+              ),
+              // Instruction label
+              Positioned(
+                top: frameRect.top - 42,
+                left: 20,
+                right: 20,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.crop_free_rounded, size: 14, color: Colors.white70),
+                        SizedBox(width: 6),
+                        Text(
+                          'Căn chỉnh hóa đơn vào giữa khung hình',
+                          style: TextStyle(
+                              color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              );
-            },
-          ),
+                ),
+              ),
+            ]);
+          }),
 
-          // 3. Interactive Focus Ring indicator on Tap
+          // ── 3. Tap-to-Focus overlay ────────────────────────────────
+          if (!kIsWeb)
+            Positioned.fill(
+              child: GestureDetector(
+                onTapDown: _onTapToFocus,
+                behavior: HitTestBehavior.translucent,
+                child: const SizedBox.expand(),
+              ),
+            ),
           if (_showFocusRing && _focusPoint != null)
             Positioned(
               left: _focusPoint!.dx - 30,
@@ -340,7 +449,7 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
               ),
             ),
 
-          // 4. Top App Bar Controls (Flash, Close, Info)
+          // ── 4. Top Controls ────────────────────────────────────────
           SafeArea(
             child: Align(
               alignment: Alignment.topCenter,
@@ -349,83 +458,134 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(),
+                    // Close
+                    _iconBtn(
+                      icon: Icons.close_rounded,
+                      onTap: () => Navigator.pop(context),
                     ),
-                    const Text(
-                      'Quét Hóa Đơn OCR',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    // Title
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Quét Hóa Đơn',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
                     ),
-                    IconButton(
-                      icon: Icon(flashIcons[_flashMode], color: _flashMode > 0 ? const Color(0xFFFBBF24) : Colors.white),
-                      onPressed: _toggleFlash,
-                    ),
+                    // Flash toggle (only on mobile with camera)
+                    if (!kIsWeb && _isCameraInitialized)
+                      _iconBtn(
+                        icon: _flashIcons[_flashModes.indexOf(_flashMode)],
+                        onTap: _toggleFlash,
+                      )
+                    else
+                      const SizedBox(width: 44),
                   ],
                 ),
               ),
             ),
           ),
 
-          // 5. Bottom Controls Bar (Shutter, Gallery, Samples)
-          SafeArea(
-            child: Align(
-              alignment: Alignment.bottomCenter,
+          // ── 5. Bottom Controls ─────────────────────────────────────
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.only(bottom: 32, left: 32, right: 32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Web notice
+                    if (kIsWeb)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          '🌐 Web: Chọn ảnh từ thư viện hoặc dùng hóa đơn mẫu bên dưới',
+                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Gallery Button
-                        IconButton(
-                          icon: const Icon(Icons.photo_library_rounded, color: Colors.white, size: 28),
-                          tooltip: 'Chọn từ thư viện',
-                          onPressed: _pickFromGallery,
+                        // Gallery button
+                        Column(
+                          children: [
+                            _iconBtn(
+                              icon: Icons.photo_library_rounded,
+                              size: 48,
+                              onTap: _pickFromGallery,
+                            ),
+                            const SizedBox(height: 6),
+                            const Text('Thư viện',
+                                style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          ],
                         ),
 
-                        // Big Shutter Button
+                        // Shutter button
                         GestureDetector(
-                          onTap: _captureFromCamera,
+                          onTap: _capturePhoto,
                           child: Container(
-                            width: 76,
-                            height: 76,
+                            width: 74,
+                            height: 74,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 4),
-                              color: Colors.transparent,
-                            ),
-                            child: Center(
-                              child: Container(
-                                width: 62,
-                                height: 62,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
+                              color: Colors.white,
+                              border: Border.all(color: const Color(0xFF6366F1), width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                                  blurRadius: 16,
+                                  spreadRadius: 4,
                                 ),
-                              ),
+                              ],
                             ),
+                            child: _isCapturing
+                                ? const Padding(
+                                    padding: EdgeInsets.all(18),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 3,
+                                      color: Color(0xFF6366F1),
+                                    ),
+                                  )
+                                : const Icon(Icons.camera_rounded,
+                                    size: 38, color: Color(0xFF6366F1)),
                           ),
                         ),
 
-                        // Sample Receipts Button
-                        IconButton(
-                          icon: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 28),
-                          tooltip: 'Hóa đơn mẫu',
-                          onPressed: _showSampleReceiptsDialog,
+                        // Switch camera / Demo button
+                        Column(
+                          children: [
+                            if (!kIsWeb && _cameras.length >= 2)
+                              _iconBtn(
+                                icon: Icons.flip_camera_android_rounded,
+                                size: 48,
+                                onTap: _switchCamera,
+                              )
+                            else
+                              _iconBtn(
+                                icon: Icons.receipt_long_rounded,
+                                size: 48,
+                                onTap: _showSampleReceiptsDialog,
+                              ),
+                            const SizedBox(height: 6),
+                            Text(
+                              (!kIsWeb && _cameras.length >= 2) ? 'Đổi camera' : 'Hóa đơn mẫu',
+                              style: const TextStyle(color: Colors.white70, fontSize: 11),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed: _showSampleReceiptsDialog,
-                      icon: const Icon(Icons.bolt_rounded, color: Color(0xFF818CF8), size: 16),
-                      label: const Text(
-                        'Thử nghiệm hóa đơn mẫu (Highlands, WinMart...)',
-                        style: TextStyle(color: Color(0xFF818CF8), fontSize: 12),
-                      ),
                     ),
                   ],
                 ),
@@ -436,74 +596,157 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
       ),
     );
   }
+
+  Widget _buildCameraPreview() {
+    // Web: show instruction background
+    if (kIsWeb) {
+      return Container(
+        color: const Color(0xFF111827),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.camera_alt_outlined,
+                  size: 72, color: Colors.white.withValues(alpha: 0.15)),
+              const SizedBox(height: 16),
+              Text(
+                'Chụp ảnh hóa đơn từ điện thoại\nhoặc chọn ảnh từ thư viện',
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4), fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Mobile: camera not initialized
+    if (!_isCameraInitialized || _cameraController == null) {
+      return Container(
+        color: Colors.black,
+        child: Center(
+          child: _isCameraError
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.no_photography_rounded,
+                        size: 64, color: Colors.red),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        _cameraErrorMsg,
+                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton.icon(
+                      onPressed: _initCamera,
+                      icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                      label: const Text('Thử lại', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                )
+              : const CircularProgressIndicator(color: Color(0xFF6366F1)),
+        ),
+      );
+    }
+
+    // Mobile: show live CameraPreview
+    return GestureDetector(
+      onTapDown: _onTapToFocus,
+      child: CameraPreview(_cameraController!),
+    );
+  }
+
+  Widget _iconBtn({
+    required IconData icon,
+    required VoidCallback onTap,
+    double size = 44,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.55),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: size * 0.5),
+      ),
+    );
+  }
 }
 
-/// CustomPainter drawing the darkened vignette surrounding the crop frame
+// ─────────────────────────────────────────────────────────────────────────────
+// PAINTERS
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _ViewfinderOverlayPainter extends CustomPainter {
   final Rect frameRect;
-
-  _ViewfinderOverlayPainter({required this.frameRect});
+  const _ViewfinderOverlayPainter({required this.frameRect});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final backgroundPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.62)
-      ..style = PaintingStyle.fill;
+    final outer = Offset.zero & size;
+    final inner = RRect.fromRectAndRadius(frameRect, const Radius.circular(12));
 
-    final backgroundPath = Path()
-      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final path = Path()
+      ..addRect(outer)
+      ..addRRect(inner)
+      ..fillType = PathFillType.evenOdd;
 
-    final cutoutPath = Path()
-      ..addRRect(RRect.fromRectAndRadius(frameRect, const Radius.circular(16)));
-
-    final overlayPath = Path.combine(
-      PathOperation.difference,
-      backgroundPath,
-      cutoutPath,
+    canvas.drawPath(
+      path,
+      Paint()..color = Colors.black.withValues(alpha: 0.62),
     );
-
-    canvas.drawPath(overlayPath, backgroundPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _ViewfinderOverlayPainter oldDelegate) {
-    return oldDelegate.frameRect != frameRect;
-  }
+  bool shouldRepaint(_ViewfinderOverlayPainter old) => old.frameRect != frameRect;
 }
 
-/// CustomPainter drawing framing corner brackets
 class _CornerBracketsPainter extends CustomPainter {
   final Color color;
-
-  _CornerBracketsPainter({required this.color});
+  const _CornerBracketsPainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
+    const len = 28.0;
+    const thick = 3.5;
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 3.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = thick
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
 
-    const len = 24.0;
+    final corners = [
+      // top-left
+      [Offset(0, len), Offset.zero, Offset(len, 0)],
+      // top-right
+      [Offset(size.width - len, 0), Offset(size.width, 0), Offset(size.width, len)],
+      // bottom-left
+      [Offset(0, size.height - len), Offset(0, size.height), Offset(len, size.height)],
+      // bottom-right
+      [
+        Offset(size.width - len, size.height),
+        Offset(size.width, size.height),
+        Offset(size.width, size.height - len)
+      ],
+    ];
 
-    // Top-Left
-    canvas.drawLine(const Offset(0, 0), const Offset(len, 0), paint);
-    canvas.drawLine(const Offset(0, 0), const Offset(0, len), paint);
-
-    // Top-Right
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width - len, 0), paint);
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width, len), paint);
-
-    // Bottom-Left
-    canvas.drawLine(Offset(0, size.height), Offset(len, size.height), paint);
-    canvas.drawLine(Offset(0, size.height), Offset(0, size.height - len), paint);
-
-    // Bottom-Right
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width - len, size.height), paint);
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width, size.height - len), paint);
+    for (final pts in corners) {
+      final path = Path()
+        ..moveTo(pts[0].dx, pts[0].dy)
+        ..lineTo(pts[1].dx, pts[1].dy)
+        ..lineTo(pts[2].dx, pts[2].dy);
+      canvas.drawPath(path, paint);
+    }
   }
 
   @override
-  bool shouldRepaint(covariant _CornerBracketsPainter oldDelegate) => false;
+  bool shouldRepaint(_CornerBracketsPainter old) => old.color != color;
 }
