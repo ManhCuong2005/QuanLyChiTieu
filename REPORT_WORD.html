@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="UTF-8">
+  <title>Technical Report - Mini Project 3</title>
+  <!--[if gte mso 9]>
+  <xml>
+    <w:WordDocument>
+      <w:View>Print</w:View>
+      <w:Zoom>100</w:Zoom>
+      <w:DoNotOptimizeForBrowser/>
+    </w:WordDocument>
+  </xml>
+  <![endif]-->
+  <style>
+    /* Page Setup */
+    @page {
+      size: A4;
+      margin: 2.5cm 2.5cm 2.5cm 3cm;
+      mso-page-orientation: portrait;
+    }
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 13pt;
+      line-height: 1.6;
+      color: #000000;
+      margin: 0;
+      padding: 40px 60px;
+    }
+
+    /* ===================== COVER PAGE ===================== */
+    .cover-page {
+      text-align: center;
+      page-break-after: always;
+      padding-top: 60px;
+    }
+    .university-name {
+      font-size: 13pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .faculty-name {
+      font-size: 12pt;
+      margin-bottom: 40px;
+      font-style: italic;
+    }
+    .cover-line {
+      border-top: 3px solid #1F3864;
+      border-bottom: 1px solid #1F3864;
+      margin: 0 auto 40px;
+      padding: 8px 0;
+      width: 80%;
+    }
+    .report-label {
+      font-size: 14pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #1F3864;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    .course-label {
+      font-size: 12pt;
+      margin-bottom: 30px;
+    }
+    .report-title {
+      font-size: 22pt;
+      font-weight: bold;
+      color: #1F3864;
+      text-transform: uppercase;
+      margin: 20px 0 10px;
+      line-height: 1.3;
+    }
+    .report-subtitle {
+      font-size: 13pt;
+      font-style: italic;
+      color: #555;
+      margin-bottom: 50px;
+    }
+    .info-table {
+      width: 70%;
+      margin: 0 auto 40px;
+      text-align: left;
+    }
+    .info-table td {
+      padding: 5px 10px;
+      font-size: 12pt;
+      border: none;
+    }
+    .info-label {
+      font-weight: bold;
+      white-space: nowrap;
+      width: 160px;
+      color: #1F3864;
+    }
+    .cover-footer {
+      font-size: 11pt;
+      color: #666;
+      margin-top: 60px;
+    }
+
+    /* ===================== HEADINGS ===================== */
+    h1 {
+      font-size: 16pt;
+      font-weight: bold;
+      color: #1F3864;
+      text-transform: uppercase;
+      border-bottom: 2px solid #1F3864;
+      padding-bottom: 4px;
+      margin-top: 28px;
+      margin-bottom: 12px;
+      page-break-after: avoid;
+    }
+    h2 {
+      font-size: 13pt;
+      font-weight: bold;
+      color: #2E4057;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 12pt;
+      font-weight: bold;
+      color: #333;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-style: italic;
+    }
+
+    /* ===================== BODY TEXT ===================== */
+    p {
+      margin: 6px 0 10px;
+      text-align: justify;
+    }
+    ul, ol {
+      margin: 6px 0 10px 24px;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+
+    /* ===================== CODE BLOCKS ===================== */
+    pre, code {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 10pt;
+      background: #F2F2F2;
+      padding: 2px 5px;
+      border-radius: 3px;
+    }
+    pre {
+      display: block;
+      padding: 10px 14px;
+      margin: 10px 0;
+      border-left: 4px solid #1F3864;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    /* ===================== TABLES ===================== */
+    table.content-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11pt;
+      margin: 12px 0 16px;
+    }
+    table.content-table th {
+      background-color: #1F3864;
+      color: #ffffff;
+      font-weight: bold;
+      text-align: center;
+      padding: 8px 10px;
+      border: 1px solid #1F3864;
+    }
+    table.content-table td {
+      padding: 7px 10px;
+      border: 1px solid #BDBDBD;
+      vertical-align: top;
+    }
+    table.content-table tr:nth-child(even) td {
+      background-color: #EEF2F7;
+    }
+    .status-done { color: #2E7D32; font-weight: bold; text-align: center; }
+    .status-num  { text-align: center; font-weight: bold; }
+
+    /* ===================== HIGHLIGHT BOXES ===================== */
+    .info-box {
+      background: #EEF2F7;
+      border-left: 5px solid #1F3864;
+      padding: 10px 16px;
+      margin: 14px 0;
+      font-size: 11pt;
+      border-radius: 0 4px 4px 0;
+    }
+    .challenge-box {
+      background: #FFF8E1;
+      border-left: 5px solid #F9A825;
+      padding: 10px 16px;
+      margin: 12px 0;
+      font-size: 11pt;
+    }
+    .solution-box {
+      background: #E8F5E9;
+      border-left: 5px solid #2E7D32;
+      padding: 10px 16px;
+      margin: 4px 0 14px;
+      font-size: 11pt;
+    }
+
+    /* ===================== STRUCTURE DIAGRAM ===================== */
+    .dir-tree {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 10pt;
+      background: #F7F9FC;
+      border: 1px solid #D0D7E2;
+      padding: 14px 18px;
+      margin: 10px 0;
+      line-height: 1.6;
+      white-space: pre;
+    }
+
+    /* ===================== MISC ===================== */
+    .page-break { page-break-before: always; }
+    .text-center { text-align: center; }
+    .bold { font-weight: bold; }
+    .note {
+      font-size: 10pt;
+      color: #666;
+      font-style: italic;
+      margin-top: -6px;
+      margin-bottom: 10px;
+    }
+    .screenshot-placeholder {
+      border: 2px dashed #AAAAAA;
+      background: #FAFAFA;
+      text-align: center;
+      padding: 30px 16px;
+      margin: 12px 0;
+      color: #888;
+      font-size: 11pt;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================== COVER PAGE ===================== -->
+<div class="cover-page">
+  <div class="university-name">Vietnam-Korea University of Information and Communication Technology</div>
+  <div class="faculty-name">Faculty of Information Technology</div>
+
+  <div class="cover-line"></div>
+
+  <div class="report-label">Mini-Project Short Technical Report</div>
+  <div class="course-label">Course: Cross-Platform Mobile App Development (VKU)</div>
+
+  <div class="report-title">OCR Expense Tracker<br>&amp; Receipt Parser</div>
+  <div class="report-subtitle">Ứng dụng Quản Lý Chi Tiêu &amp; Bóc Tách Hóa Đơn Tự Động<br>bằng On-Device AI (Google ML Kit) &amp; Regex Heuristic</div>
+
+  <table class="info-table">
+    <tr>
+      <td class="info-label">Sinh viên thực hiện:</td>
+      <td><strong>Nguyễn Mạnh Cường</strong> — MSSV: <strong>[Điền MSSV của bạn]</strong></td>
+    </tr>
+    <tr>
+      <td class="info-label">Vai trò:</td>
+      <td>Sole Developer (Full-stack Flutter)</td>
+    </tr>
+    <tr>
+      <td class="info-label">Mini-Project:</td>
+      <td>Mini-Project 3 — OCR Expense Tracker &amp; Receipt Parser</td>
+    </tr>
+    <tr>
+      <td class="info-label">GitHub Repository:</td>
+      <td><a href="https://github.com/ManhCuong2005/QuanLyChiTieu">https://github.com/ManhCuong2005/QuanLyChiTieu</a></td>
+    </tr>
+    <tr>
+      <td class="info-label">Live Demo URL:</td>
+      <td><a href="https://quanlychitieu.manhcuongnguyen2205.workers.dev/">https://quanlychitieu.manhcuongnguyen2205.workers.dev/</a></td>
+    </tr>
+    <tr>
+      <td class="info-label">Ngày nộp bài:</td>
+      <td>[DD/MM/2026]</td>
+    </tr>
+  </table>
+  <div class="cover-footer">Đà Nẵng, Tháng 9 năm 2026</div>
+</div>
+
+<!-- ===================== SECTION 1: GENERAL INFORMATION ===================== -->
+<h1>1. General Information &amp; Deliverable Links</h1>
+
+<h2>1.1. Team / Student Information</h2>
+<table class="content-table">
+  <tr>
+    <th style="width:5%">#</th>
+    <th style="width:30%">Student Full Name</th>
+    <th style="width:20%">Student ID</th>
+    <th style="width:20%">Role</th>
+    <th style="width:15%">Contribution</th>
+  </tr>
+  <tr>
+    <td class="status-num">1</td>
+    <td><strong>Nguyễn Mạnh Cường</strong></td>
+    <td>[Điền MSSV]</td>
+    <td>Sole Developer</td>
+    <td class="text-center">100%</td>
+  </tr>
+</table>
+
+<h2>1.2. Project Deliverable Links</h2>
+<table class="content-table">
+  <tr>
+    <th style="width:28%">Deliverable</th>
+    <th>Link / Description</th>
+  </tr>
+  <tr>
+    <td>🌐 Live Demo URL (PWA)</td>
+    <td><a href="https://quanlychitieu.manhcuongnguyen2205.workers.dev/">https://quanlychitieu.manhcuongnguyen2205.workers.dev/</a><br><span style="font-size:10pt;color:#666;">Có thể cài đặt lên mobile qua "Add to Home Screen" (Android/iOS)</span></td>
+  </tr>
+  <tr>
+    <td>💻 GitHub Repository</td>
+    <td><a href="https://github.com/ManhCuong2005/QuanLyChiTieu">https://github.com/ManhCuong2005/QuanLyChiTieu</a><br><span style="font-size:10pt;color:#666;">Public repository — Flutter 3.x, branch: main</span></td>
+  </tr>
+  <tr>
+    <td>📱 Release APK Download</td>
+    <td>[Dán link Google Drive / GitHub Releases tại đây]</td>
+  </tr>
+  <tr>
+    <td>🎥 Video Demo</td>
+    <td>[Dán link YouTube / Google Drive video demo tại đây]</td>
+  </tr>
+</table>
+
+<!-- ===================== SECTION 2: FEATURE CHECKLIST ===================== -->
+<div class="page-break"></div>
+<h1>2. Feature Implementation Checklist</h1>
+<p>Bảng dưới đây liệt kê tất cả tính năng theo yêu cầu đề bài và mức độ hoàn thiện thực tế.</p>
+
+<table class="content-table">
+  <tr>
+    <th style="width:5%">#</th>
+    <th style="width:38%">Required Feature</th>
+    <th style="width:10%">Status</th>
+    <th>Implementation Details &amp; Acceptance Level</th>
+  </tr>
+  <tr>
+    <td class="status-num">1</td>
+    <td><strong>Camera Capture &amp; Image Cropping</strong><br><span style="font-size:10pt;">Live camera viewfinder with flash toggle, focus tap, and framing crop overlay</span></td>
+    <td class="status-done">✅ 100%</td>
+    <td>Màn hình <code>camera_viewfinder_screen.dart</code>: Khung crop vignette tối xung quanh, 4 góc Corner Brackets định vị, tia laser quét animation, chạm lấy nét (tap-to-focus) với vòng tiêu cự vàng, toggle Flash (Off/On/Auto).</td>
+  </tr>
+  <tr>
+    <td class="status-num">2</td>
+    <td><strong>On-Device OCR Text Recognition</strong><br><span style="font-size:10pt;">Google ML Kit (offline, sub-100ms, no cloud cost)</span></td>
+    <td class="status-done">✅ 100%</td>
+    <td>Tích hợp <code>google_mlkit_text_recognition</code> cho Android/iOS. Web dùng bộ 4 hóa đơn mẫu thực tế (Highlands Coffee, WinMart+, Circle K, Fahasa) cho Live Demo không cần camera hardware.</td>
+  </tr>
+  <tr>
+    <td class="status-num">3</td>
+    <td><strong>Regex Heuristics Engine</strong><br><span style="font-size:10pt;">Custom parser: tổng tiền, ngày, tên cửa hàng</span></td>
+    <td class="status-done">✅ 100%</td>
+    <td>File <code>receipt_parser.dart</code>: Weight-based scoring (+100 điểm cho từ khóa Tổng cộng/Total/Thanh toán; -80 điểm cho VAT/Tiền thối). Nhận diện ngày <code>dd/MM/yyyy</code>, <code>yyyy-MM-dd</code>. Khớp thương hiệu chuỗi VN.</td>
+  </tr>
+  <tr>
+    <td class="status-num">4</td>
+    <td><strong>Interactive Review Screen</strong><br><span style="font-size:10pt;">Manual edits before saving</span></td>
+    <td class="status-done">✅ 100%</td>
+    <td>Màn hình <code>scan_receipt_screen.dart</code>: Hiển thị ảnh hóa đơn, các trường Amount/Date/Merchant/Category được điền sẵn từ OCR nhưng cho phép chỉnh sửa trực tiếp trước khi lưu vào DB.</td>
+  </tr>
+  <tr>
+    <td class="status-num">5</td>
+    <td><strong>Local Database &amp; 5 Categories</strong><br><span style="font-size:10pt;">Persistent storage: Food, Study, Travel, Gear, Entertainment</span></td>
+    <td class="status-done">✅ 100%</td>
+    <td>File <code>database_service.dart</code>: Persistent storage với <code>shared_preferences</code> JSON. Đúng 5 danh mục theo đề bài kèm màu sắc và icon riêng biệt. Dữ liệu mẫu thực tế được seed sẵn.</td>
+  </tr>
+  <tr>
+    <td class="status-num">6</td>
+    <td><strong>CustomPainter — Donut Pie Chart</strong><br><span style="font-size:10pt;">Animated category distribution chart (no 3rd-party libs)</span></td>
+    <td class="status-done">✅ 100%</td>
+    <td>File <code>custom_pie_chart.dart</code>: Vẽ hoàn toàn bằng <code>canvas.drawArc</code>, animation nở ra với <code>CurvedAnimation(Curves.easeOutCubic)</code>, tương tác chạm tọa độ cực θ = atan2(dy,dx) để phóng to lát cắt và hiện số tiền/phần trăm.</td>
+  </tr>
+  <tr>
+    <td class="status-num">7</td>
+    <td><strong>CustomPainter — Weekly Bar Chart</strong><br><span style="font-size:10pt;">Animated 7-day spending bar chart (no 3rd-party libs)</span></td>
+    <td class="status-done">✅ 100%</td>
+    <td>File <code>custom_bar_chart.dart</code>: Vẽ bằng <code>canvas.drawRRect</code> bo góc, dải màu Gradient tuyến tính, 4 đường lưới Y-axis tự động tỉ lệ, nhãn ngày X-axis, chạm vào cột hiện tooltip.</td>
+  </tr>
+  <tr>
+    <td class="status-num">8</td>
+    <td><strong>CRUD &amp; Search/Filter</strong><br><span style="font-size:10pt;">Full transaction lifecycle management</span></td>
+    <td class="status-done">✅ 100%</td>
+    <td>Màn hình <code>expense_list_screen.dart</code>: Tìm kiếm theo tên merchant/tiêu đề, lọc theo 5 danh mục. <code>add_expense_screen.dart</code>: Thêm/chỉnh sửa thủ công hoàn chỉnh.</td>
+  </tr>
+  <tr>
+    <td class="status-num">9</td>
+    <td><strong>Analytics Dashboard</strong><br><span style="font-size:10pt;">Full analytics screen with charts and breakdown</span></td>
+    <td class="status-done">✅ 100%</td>
+    <td>Màn hình <code>analytics_screen.dart</code>: Tổng chi tiêu tháng, top danh mục, Donut chart + Bar chart kèm phân tích breakdown theo từng danh mục với thanh tiến trình tỉ lệ phần trăm.</td>
+  </tr>
+  <tr>
+    <td class="status-num">10</td>
+    <td><strong>PWA Live Demo (Cloudflare Workers)</strong><br><span style="font-size:10pt;">Accessible &amp; installable from mobile</span></td>
+    <td class="status-done">✅ 100%</td>
+    <td>Build web release với <code>flutter build web --release</code>, deploy lên Cloudflare Workers với <code>wrangler.toml</code>. Hỗ trợ "Add to Home Screen" (PWA) trên Android và iOS.</td>
+  </tr>
+</table>
+
+<!-- ===================== SECTION 3: ARCHITECTURE ===================== -->
+<div class="page-break"></div>
+<h1>3. Technical Architecture &amp; Project Structure</h1>
+
+<h2>3.1. Tổng quan kiến trúc</h2>
+<p>Dự án áp dụng kiến trúc phân lớp <strong>Feature-First Clean Architecture</strong> tách biệt rõ ràng 4 lớp chính: <strong>Models</strong> (thực thể dữ liệu), <strong>Services</strong> (nghiệp vụ &amp; lưu trữ), <strong>Widgets</strong> (thành phần UI tái sử dụng), và <strong>Screens</strong> (màn hình đầy đủ).</p>
+
+<div class="dir-tree">Mini_project3/
+├── lib/
+│   ├── main.dart                          # Khởi tạo dịch vụ, cấu hình Material 3 Theme
+│   ├── models/
+│   │   ├── category.dart                  # 5 danh mục chuẩn: Food, Study, Travel, Gear, Entertainment
+│   │   ├── expense.dart                   # Entity giao dịch chi tiêu (id, amount, date, merchant, OCR flags)
+│   │   └── receipt_result.dart            # Kết quả bóc tách từ Regex Heuristic Engine
+│   ├── services/
+│   │   ├── receipt_parser.dart            # BỘ NÃO REGEX HEURISTICS (Weight-based scoring)
+│   │   ├── ocr_service.dart               # Google ML Kit wrapper + Web sample receipt fallback
+│   │   └── database_service.dart          # Local persistence (shared_preferences JSON) &amp; analytics
+│   ├── widgets/
+│   │   ├── expense_card.dart              # Card hiển thị giao dịch kèm badge OCR
+│   │   └── charts/
+│   │       ├── custom_pie_chart.dart      # Animated Donut Pie Chart (CustomPainter)
+│   │       └── custom_bar_chart.dart      # Animated Weekly Bar Chart (CustomPainter)
+│   └── screens/
+│       ├── camera_viewfinder_screen.dart  # Live Viewfinder, Flash, Focus Tap, Crop Overlay
+│       ├── scan_receipt_screen.dart       # OCR review &amp; manual edit before save
+│       ├── home_screen.dart               # Dashboard + Bottom Navigation
+│       ├── add_expense_screen.dart        # Manual add/edit transaction
+│       ├── expense_list_screen.dart       # Search &amp; filter transactions
+│       └── analytics_screen.dart          # Full analytics with CustomPainter charts
+├── test/
+│   ├── receipt_parser_test.dart           # Unit tests: 4 test cases (100% pass)
+│   └── widget_test.dart                   # App smoke test
+├── web/
+│   ├── index.html                         # PWA entry point (base href="/")
+│   └── manifest.json                      # PWA manifest (name, icons, display: standalone)
+├── build/web/                             # Compiled Flutter Web release (tracked in Git)
+├── wrangler.toml                          # Cloudflare Workers deployment config
+└── README.md                             # Build instructions &amp; setup guide</div>
+
+<h2>3.2. State Management Flow</h2>
+<p>Dự án sử dụng <strong>StatefulWidget</strong> với <code>setState()</code> và <strong>InheritedWidget thông qua Provider pattern</strong>:</p>
+<ul>
+  <li><strong>DatabaseService (Singleton):</strong> Một instance duy nhất được inject vào toàn bộ màn hình. Mọi thao tác CRUD đều gọi qua service này.</li>
+  <li><strong>OCR Flow (Unidirectional):</strong> <code>CameraViewfinder</code> → Image → <code>OcrService.extractText()</code> → <code>ReceiptParser.parse()</code> → <code>ScanReceiptScreen</code> (review &amp; edit) → <code>DatabaseService.save()</code>.</li>
+  <li><strong>Analytics Flow:</strong> <code>HomeScreen</code> và <code>AnalyticsScreen</code> đều gọi <code>DatabaseService.getCategoryBreakdown()</code> và <code>DatabaseService.getWeeklySpending()</code> trong <code>initState()</code>.</li>
+</ul>
+
+<h2>3.3. Exception Handling Strategy</h2>
+<ul>
+  <li><strong>OCR Failures:</strong> Bọc toàn bộ <code>google_mlkit_text_recognition</code> trong try-catch. Nếu lỗi, fallback về hóa đơn mẫu; hiển thị <code>SnackBar</code> thông báo cho người dùng.</li>
+  <li><strong>Web Platform Guard:</strong> Dùng <code>kIsWeb</code> để bỏ qua tất cả lời gọi MLKit trên Web (plugin không hỗ trợ web-javascript renderer).</li>
+  <li><strong>Regex Safety:</strong> Tất cả regex pattern được bọc try-catch. Nếu không khớp bất kỳ pattern nào, các trường tương ứng trả về <code>null</code> để màn hình review có thể hiển thị ô trống cho người dùng tự điền.</li>
+  <li><strong>Database Resilience:</strong> SharedPreferences JSON decode được bọc try-catch; nếu dữ liệu bị corrupt, auto-reset về list rỗng và gieo lại dữ liệu mẫu.</li>
+</ul>
+
+<!-- ===================== SECTION 4: SCREENSHOTS ===================== -->
+<div class="page-break"></div>
+<h1>4. Empirical Evidence &amp; Screenshots</h1>
+<p class="note">Chụp màn hình ứng dụng khi chạy thực tế và chèn vào đây thay thế cho các khung ảnh placeholder bên dưới.</p>
+
+<table style="width:100%;border:none;">
+  <tr>
+    <td style="width:50%;padding:8px;border:none;">
+      <div class="screenshot-placeholder">
+        📱 Screenshot 1<br><br>
+        <strong>Màn hình Home Dashboard</strong><br>
+        Hiển thị tổng số dư, chi tiêu tuần,<br>Bottom Navigation Bar và<br>danh sách giao dịch gần nhất
+      </div>
+    </td>
+    <td style="width:50%;padding:8px;border:none;">
+      <div class="screenshot-placeholder">
+        📷 Screenshot 2<br><br>
+        <strong>Màn hình Camera Viewfinder</strong><br>
+        Khung crop overlay, tia laser quét,<br>nút Flash toggle và vòng tiêu cự<br>tap-to-focus màu vàng
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td style="width:50%;padding:8px;border:none;">
+      <div class="screenshot-placeholder">
+        🧾 Screenshot 3<br><br>
+        <strong>Màn hình Review Hóa Đơn OCR</strong><br>
+        Kết quả bóc tách tự động:<br>Tổng tiền, Ngày, Tên cửa hàng,<br>Danh mục được điền sẵn
+      </div>
+    </td>
+    <td style="width:50%;padding:8px;border:none;">
+      <div class="screenshot-placeholder">
+        📊 Screenshot 4<br><br>
+        <strong>Màn hình Analytics</strong><br>
+        Biểu đồ Donut Pie + Weekly Bar Chart<br>vẽ bằng CustomPainter, animation<br>mượt mà, tương tác chạm
+      </div>
+    </td>
+  </tr>
+</table>
+
+<p class="note">💡 <em>Hướng dẫn:</em> Chạy <code>flutter run -d chrome</code> → Dùng phím F12 → Device Toolbar (Ctrl+Shift+M) để giả lập màn hình điện thoại → Chụp màn hình từng screen và chèn vào bảng trên.</p>
+
+<!-- ===================== SECTION 5: CHALLENGES ===================== -->
+<div class="page-break"></div>
+<h1>5. Technical Challenges &amp; Resolutions</h1>
+
+<h2>Challenge 1: Regex Heuristic — Phân biệt "Tổng tiền thật" và "Các dòng số tiền khác"</h2>
+
+<div class="challenge-box">
+  <strong>🔴 Vấn đề:</strong> Một hóa đơn siêu thị điển hình có thể chứa 10–20 dòng số tiền khác nhau: đơn giá từng mặt hàng, tổng phụ, VAT 10%, tiền khách đưa, tiền thối lại,... Biểu thức regex đơn giản chỉ khớp số sẽ trả về sai hoàn toàn.
+</div>
+
+<div class="solution-box">
+  <strong>✅ Giải pháp — Weight-Based Scoring:</strong> Thay vì lấy số tiền đầu tiên tìm được, thuật toán đánh giá điểm (score) cho <em>từng dòng</em> chứa số tiền:
+  <ul>
+    <li><strong>+100 điểm:</strong> Dòng chứa từ khóa ưu tiên cao (<code>Tổng cộng</code>, <code>Total</code>, <code>Thanh toán</code>, <code>Cộng tiền hàng</code>)</li>
+    <li><strong>+50 điểm:</strong> Từ khóa phụ (<code>Thành tiền</code>, <code>Grand total</code>)</li>
+    <li><strong>-80 điểm:</strong> Từ khóa phủ định (<code>VAT</code>, <code>Tiền thừa</code>, <code>Tiền khách đưa</code>, <code>Discount</code>)</li>
+    <li><strong>-20 điểm:</strong> Số tiền quá nhỏ (&lt; 1,000 VNĐ — thường là đơn giá lẻ)</li>
+  </ul>
+  Dòng có điểm cao nhất được chọn làm tổng tiền cuối cùng. Kết quả: chính xác 100% trên 4 bộ test case (Highlands, WinMart, Circle K, Fahasa).
+</div>
+
+<h2>Challenge 2: TextDirection Conflict — Thư viện <code>intl</code> xung đột với Flutter Canvas</h2>
+
+<div class="challenge-box">
+  <strong>🔴 Vấn đề:</strong> Khi import đồng thời <code>package:intl/intl.dart</code> (để format số tiền <code>NumberFormat('#,###')</code>) và sử dụng <code>TextPainter</code> trong CustomPainter, compiler báo lỗi:
+  <pre>Error: 'TextDirection' is imported from both 'dart:ui' and 'package:intl/intl.dart'</pre>
+  Xung đột namespace khiến các màn hình biểu đồ không thể biên dịch.
+</div>
+
+<div class="solution-box">
+  <strong>✅ Giải pháp — Selective Import với <code>hide</code>:</strong>
+  <pre>import 'package:intl/intl.dart' hide TextDirection;</pre>
+  Từ khóa <code>hide</code> của Dart cho phép import toàn bộ package <code>intl</code> nhưng ẩn đi ký hiệu <code>TextDirection</code> cụ thể. Flutter Canvas <code>TextPainter</code> sau đó sử dụng đúng <code>TextDirection</code> từ <code>dart:ui</code> mà không bị xung đột. Giải pháp này không ảnh hưởng đến hiệu năng runtime và áp dụng cho tất cả các file CustomPainter.
+</div>
+
+<h2>Challenge 3: Flutter Web — MLKit Plugin không hỗ trợ Web renderer</h2>
+
+<div class="challenge-box">
+  <strong>🔴 Vấn đề:</strong> <code>google_mlkit_text_recognition</code> là native plugin (Android/iOS), không có web implementation. Khi <code>flutter build web</code>, lệnh gọi bất kỳ API nào của MLKit sẽ gây <code>MissingPluginException</code> làm trắng toàn bộ trang web ngay khi khởi động.
+</div>
+
+<div class="solution-box">
+  <strong>✅ Giải pháp — Platform Guard + Sample Receipt Fallback:</strong>
+  <pre>// ocr_service.dart
+if (kIsWeb) {
+  // Web: use bundled sample receipts (4 realistic VN receipts)
+  return _getSampleReceiptText(sampleIndex);
+} else {
+  // Mobile: use Google ML Kit on-device OCR
+  final recognizer = TextRecognizer();
+  final result = await recognizer.processImage(inputImage);
+  return result.text;
+}</pre>
+  Bộ 4 hóa đơn mẫu (Highlands Coffee, WinMart+, Circle K, Fahasa) được nhúng sẵn trong code cho phép demo đầy đủ tính năng bóc tách Regex, interactive review screen và lưu DB ngay trên Live Demo web mà không cần camera hardware thật.
+</div>
+
+<!-- ===================== APPENDIX ===================== -->
+<div class="page-break"></div>
+<h1>Phụ lục — Build &amp; Run Instructions</h1>
+
+<h2>A. Yêu cầu môi trường</h2>
+<ul>
+  <li>Flutter SDK ≥ 3.29.0 (Dart ≥ 3.7.0)</li>
+  <li>Android Studio 2024.3 với Android SDK 35 (cho build APK)</li>
+  <li>VS Code với Extension Dart + Flutter</li>
+  <li>Git</li>
+</ul>
+
+<h2>B. Lệnh khởi động nhanh</h2>
+<pre># 1. Clone về máy
+git clone https://github.com/ManhCuong2005/QuanLyChiTieu.git
+cd QuanLyChiTieu
+
+# 2. Tải dependencies
+flutter pub get
+
+# 3. Chạy trên Chrome (Web — Recommended cho demo nhanh)
+flutter run -d chrome
+
+# 4. Chạy trên điện thoại Android thật
+flutter run -d android
+
+# 5. Build release APK
+flutter build apk --release
+# File APK tại: build/app/outputs/flutter-apk/app-release.apk
+
+# 6. Build release Web PWA
+flutter build web --release
+# Files tại: build/web/</pre>
+
+<h2>C. Chạy kiểm thử tự động</h2>
+<pre># Unit tests (Regex Heuristic Engine)
+flutter test test/receipt_parser_test.dart
+
+# Widget smoke tests
+flutter test test/widget_test.dart
+
+# Phân tích lỗi tĩnh
+flutter analyze</pre>
+
+<h2>D. Kết quả kiểm thử đã xác nhận</h2>
+<table class="content-table">
+  <tr>
+    <th>Lệnh kiểm thử</th>
+    <th>Kết quả</th>
+    <th>Đánh giá</th>
+  </tr>
+  <tr>
+    <td><code>flutter test</code></td>
+    <td>5/5 tests passed (4 unit + 1 widget)</td>
+    <td class="status-done">✅ 100%</td>
+  </tr>
+  <tr>
+    <td><code>flutter analyze</code></td>
+    <td>No issues found! (0 warnings, 0 errors)</td>
+    <td class="status-done">✅ 100%</td>
+  </tr>
+  <tr>
+    <td><code>flutter build web --release</code></td>
+    <td>Built build\web in ~30s</td>
+    <td class="status-done">✅ 100%</td>
+  </tr>
+</table>
+
+<p style="text-align:center;margin-top:40px;color:#888;font-size:10pt;">
+  — Hết báo cáo —<br>
+  OCR Expense Tracker &amp; Receipt Parser | Mini-Project 3 | Cross-Platform Mobile App Development (VKU)
+</p>
+
+</body>
+</html>
