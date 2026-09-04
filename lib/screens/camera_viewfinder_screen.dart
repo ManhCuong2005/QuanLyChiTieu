@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/database_service.dart';
 import '../services/ocr_service.dart';
+import '../services/receipt_cropper.dart';
 import 'scan_receipt_screen.dart';
 
 class CameraViewfinderScreen extends StatefulWidget {
@@ -271,8 +272,9 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
       setState(() => _isCapturing = true);
       try {
         final file = await _cameraController!.takePicture();
+        final croppedPath = await cropReceiptImage(file.path);
         if (mounted) {
-          _navigateToReview(imagePath: file.path);
+          _navigateToReview(imagePath: croppedPath);
         }
       } catch (e) {
         if (mounted) {

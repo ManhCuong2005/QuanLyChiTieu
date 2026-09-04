@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:image/image.dart' as image;
 import 'package:path_provider/path_provider.dart';
 
 /// Copies a camera temporary file into the application's documents directory.
@@ -15,12 +16,21 @@ Future<String?> cacheReceiptImage(String? sourcePath, String expenseId) async {
   );
   await receiptDirectory.create(recursive: true);
 
-  final dot = sourcePath.lastIndexOf('.');
-  final extension = dot >= 0 ? sourcePath.substring(dot).toLowerCase() : '.jpg';
   final destination = File(
-    '${receiptDirectory.path}${Platform.pathSeparator}$expenseId$extension',
+    '${receiptDirectory.path}${Platform.pathSeparator}$expenseId.jpg',
   );
-  await source.copy(destination.path);
+  final decoded = image.decodeImage(await source.readAsBytes());
+  if (decoded == null) {
+    await source.copy(destination.path);
+    return destination.path;
+  }
+
+  final normalized = image.bakeOrientation(decoded);
+  final thumbnail =
+      normalized.width > 900
+          ? image.copyResize(normalized, width: 900)
+          : normalized;
+  await destination.writeAsBytes(image.encodeJpg(thumbnail, quality: 85));
   return destination.path;
 }
 

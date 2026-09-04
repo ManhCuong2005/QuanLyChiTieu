@@ -8,6 +8,7 @@ import '../models/receipt_result.dart';
 import '../services/ocr_service.dart';
 import '../services/database_service.dart';
 import '../services/receipt_image_storage.dart';
+import '../widgets/receipt_image_preview.dart';
 
 class ScanReceiptScreen extends StatefulWidget {
   final DatabaseService databaseService;
@@ -359,6 +360,19 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
             ),
 
             const SizedBox(height: 14),
+
+            if (_pickedImagePath != null) ...[
+              Container(
+                height: 180,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: ReceiptImagePreview(imagePath: _pickedImagePath!),
+              ),
+              const SizedBox(height: 14),
+            ],
 
             // Sample Receipts Section for Live Demo & Testing
             ExpansionTile(
