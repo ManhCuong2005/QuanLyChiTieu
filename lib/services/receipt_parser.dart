@@ -12,10 +12,8 @@ class ReceiptParser {
     }
 
     final rawLines = rawText.split(RegExp(r'\r?\n'));
-    final cleanedLines = rawLines
-        .map((l) => l.trim())
-        .where((l) => l.isNotEmpty)
-        .toList();
+    final cleanedLines =
+        rawLines.map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
 
     final merchantName = _extractMerchant(cleanedLines);
     final transactionDate = _extractDate(cleanedLines);
@@ -85,7 +83,10 @@ class ReceiptParser {
 
     // Heuristic: Search for lines containing store prefix keywords
     final storePrefixes = [
-      RegExp(r'^(công ty|cty|doanh nghiệp|cửa hàng|siêu thị|quán|nhà hàng|tiệm|store|coffee|cafe|mart|shop)\s*[:\-]?\s*(.+)', caseSensitive: false),
+      RegExp(
+        r'^(công ty|cty|doanh nghiệp|cửa hàng|siêu thị|quán|nhà hàng|tiệm|store|coffee|cafe|mart|shop)\s*[:\-]?\s*(.+)',
+        caseSensitive: false,
+      ),
     ];
 
     for (int i = 0; i < checkLimit; i++) {
@@ -101,10 +102,30 @@ class ReceiptParser {
 
     // Filter out common header meta lines (Tax code, invoice title, address, phone)
     final ignoreKeywords = [
-      'hóa đơn', 'hoa don', 'receipt', 'invoice', 'phiếu', 'thanh toán',
-      'vat', 'mst', 'mã số thuế', 'địa chỉ', 'address', 'tel', 'phone',
-      'sđt', 'hotline', 'wifi', 'welcome', 'xin chào', 'cảm ơn', 'thank you',
-      'bàn:', 'thu ngân:', 'order:', 'khách hàng:'
+      'hóa đơn',
+      'hoa don',
+      'receipt',
+      'invoice',
+      'phiếu',
+      'thanh toán',
+      'vat',
+      'mst',
+      'mã số thuế',
+      'địa chỉ',
+      'address',
+      'tel',
+      'phone',
+      'sđt',
+      'hotline',
+      'wifi',
+      'welcome',
+      'xin chào',
+      'cảm ơn',
+      'thank you',
+      'bàn:',
+      'thu ngân:',
+      'order:',
+      'khách hàng:',
     ];
 
     for (int i = 0; i < checkLimit; i++) {
@@ -122,7 +143,10 @@ class ReceiptParser {
       // Must have letters and at least 3 chars
       if (!shouldIgnore && RegExp(r'[a-zA-ZÀ-ỹ]{3,}').hasMatch(line)) {
         // Clean special chars at beginning or end
-        final cleaned = line.replaceAll(RegExp(r'^[\s\*\-\#\:\.]+|[\s\*\-\#\:\.]+$'), '');
+        final cleaned = line.replaceAll(
+          RegExp(r'^[\s\*\-\#\:\.]+|[\s\*\-\#\:\.]+$'),
+          '',
+        );
         if (cleaned.length >= 3 && cleaned.length <= 45) {
           return cleaned;
         }
@@ -138,9 +162,13 @@ class ReceiptParser {
     // dd/MM/yyyy, dd-MM-yyyy, dd.MM.yyyy, yyyy-MM-dd, yyyy/MM/dd, dd/MM/yy
     final datePatterns = [
       // 24/12/2024 or 24-12-2024 or 24.12.2024 (optional time HH:mm)
-      RegExp(r'\b(?<day>[0-3]?[0-9])[\/\-\.](?<month>[0-1]?[0-9])[\/\-\.](?<year>20\d{2}|\d{2})\b'),
+      RegExp(
+        r'\b(?<day>[0-3]?[0-9])[\/\-\.](?<month>[0-1]?[0-9])[\/\-\.](?<year>20\d{2}|\d{2})\b',
+      ),
       // 2024-12-24 or 2024/12/24
-      RegExp(r'\b(?<year>20\d{2})[\/\-\.](?<month>[0-1]?[0-9])[\/\-\.](?<day>[0-3]?[0-9])\b'),
+      RegExp(
+        r'\b(?<year>20\d{2})[\/\-\.](?<month>[0-1]?[0-9])[\/\-\.](?<day>[0-3]?[0-9])\b',
+      ),
     ];
 
     for (final line in lines) {
@@ -157,8 +185,9 @@ class ReceiptParser {
 
             if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
               // Try to find accompanying time (e.g., 14:30:00 or 14:30)
-              final timeMatch = RegExp(r'\b(?<hour>[0-2]?[0-9]):(?<minute>[0-5][0-9])(?::(?<second>[0-5][0-9]))?\b')
-                  .firstMatch(line);
+              final timeMatch = RegExp(
+                r'\b(?<hour>[0-2]?[0-9]):(?<minute>[0-5][0-9])(?::(?<second>[0-5][0-9]))?\b',
+              ).firstMatch(line);
 
               int hour = 12;
               int minute = 0;
@@ -166,9 +195,13 @@ class ReceiptParser {
 
               if (timeMatch != null) {
                 hour = int.parse(timeMatch.namedGroup('hour')!).clamp(0, 23);
-                minute = int.parse(timeMatch.namedGroup('minute')!).clamp(0, 59);
+                minute = int.parse(
+                  timeMatch.namedGroup('minute')!,
+                ).clamp(0, 59);
                 if (timeMatch.namedGroup('second') != null) {
-                  second = int.parse(timeMatch.namedGroup('second')!).clamp(0, 59);
+                  second = int.parse(
+                    timeMatch.namedGroup('second')!,
+                  ).clamp(0, 59);
                 }
               }
 
@@ -195,18 +228,48 @@ class ReceiptParser {
 
     // High confidence keywords for grand total
     final totalKeywords = [
-      'tổng cộng', 'tong cong', 'tổng tiền', 'tong tien', 'thành tiền', 'thanh tien',
-      'thanh toán', 'thanh toan', 'thực trả', 'thuc tra', 'khách phải trả',
-      'cộng tiền hàng', 'tổng thanh toán', 'total', 'grand total', 'amount due',
-      'balance due', 'net amount', 'total bill'
+      'tổng cộng',
+      'tong cong',
+      'tổng tiền',
+      'tong tien',
+      'thành tiền',
+      'thanh tien',
+      'thanh toán',
+      'thanh toan',
+      'thực trả',
+      'thuc tra',
+      'khách phải trả',
+      'cộng tiền hàng',
+      'tổng thanh toán',
+      'total',
+      'grand total',
+      'amount due',
+      'balance due',
+      'net amount',
+      'total bill',
     ];
 
     // Penalty keywords (discounts, tax, cash tendered, change returned)
     final penaltyKeywords = [
-      'tiền khách đưa', 'khách đưa', 'tien khach dua', 'tiền mặt', 'cash',
-      'tiền thối', 'tiền thừa', 'tien thoi', 'tien thua', 'change',
-      'vat', 'thuế', 'thue', 'chiết khấu', 'chiet khau', 'giảm giá', 'discount',
-      'điểm tích lũy', 'phí dịch vụ'
+      'tiền khách đưa',
+      'khách đưa',
+      'tien khach dua',
+      'tiền mặt',
+      'cash',
+      'tiền thối',
+      'tiền thừa',
+      'tien thoi',
+      'tien thua',
+      'change',
+      'vat',
+      'thuế',
+      'thue',
+      'chiết khấu',
+      'chiet khau',
+      'giảm giá',
+      'discount',
+      'điểm tích lũy',
+      'phí dịch vụ',
     ];
 
     double bestAmount = 0.0;
@@ -250,7 +313,9 @@ class ReceiptParser {
         if (numStr == null) continue;
 
         final parsed = _parseNumber(numStr);
-        if (parsed == null || parsed < 1000) continue; // Minimum reasonable expense
+        if (parsed == null || parsed < 1000) {
+          continue; // Minimum reasonable expense
+        }
 
         int score = 10;
         if (isTotalLine) score += 100;
@@ -282,7 +347,10 @@ class ReceiptParser {
         final numStr = m.namedGroup('num');
         if (numStr != null) {
           final parsed = _parseNumber(numStr);
-          if (parsed != null && parsed >= 5000 && parsed > fallbackMax && parsed < 100000000) {
+          if (parsed != null &&
+              parsed >= 5000 &&
+              parsed > fallbackMax &&
+              parsed < 100000000) {
             fallbackMax = parsed;
           }
         }
@@ -348,44 +416,120 @@ class ReceiptParser {
 
     // 1. Food (Ăn uống)
     if (_containsAny(fullText, [
-      'coffee', 'cafe', 'cà phê', 'tea', 'trà', 'restaurant', 'nhà hàng', 'quán',
-      'bánh', 'food', 'kfc', 'lotteria', 'jollibee', 'pizza', 'phở', 'bún', 'cơm',
-      'lẩu', 'nướng', 'bbq', 'gà rán', 'mì', 'chè', 'highlands', 'starbucks',
-      'phúc long', 'bánh mì'
+      'coffee',
+      'cafe',
+      'cà phê',
+      'tea',
+      'trà',
+      'restaurant',
+      'nhà hàng',
+      'quán',
+      'bánh',
+      'food',
+      'kfc',
+      'lotteria',
+      'jollibee',
+      'pizza',
+      'phở',
+      'bún',
+      'cơm',
+      'lẩu',
+      'nướng',
+      'bbq',
+      'gà rán',
+      'mì',
+      'chè',
+      'highlands',
+      'starbucks',
+      'phúc long',
+      'bánh mì',
     ])) {
       return ExpenseCategory.food.id;
     }
 
     // 2. Study (Học tập)
     if (_containsAny(fullText, [
-      'fahasa', 'phương nam', 'nhà sách', 'sách', 'khóa học', 'học phí',
-      'đại học', 'trường', 'văn phòng phẩm', 'giáo trình', 'bút', 'vở'
+      'fahasa',
+      'phương nam',
+      'nhà sách',
+      'sách',
+      'khóa học',
+      'học phí',
+      'đại học',
+      'trường',
+      'văn phòng phẩm',
+      'giáo trình',
+      'bút',
+      'vở',
     ])) {
       return ExpenseCategory.study.id;
     }
 
     // 3. Travel (Di chuyển)
     if (_containsAny(fullText, [
-      'xăng', 'petrolimex', 'petrol', 'grab', 'be', 'gojek', 'taxi', 'mai linh',
-      'giao hàng', 'ship', 'bus', 'vé xe', 'vé máy bay', 'parking', 'giữ xe'
+      'xăng',
+      'petrolimex',
+      'petrol',
+      'grab',
+      'be',
+      'gojek',
+      'taxi',
+      'mai linh',
+      'giao hàng',
+      'ship',
+      'bus',
+      'vé xe',
+      'vé máy bay',
+      'parking',
+      'giữ xe',
     ])) {
       return ExpenseCategory.travel.id;
     }
 
     // 4. Gear (Thiết bị & Đồ dùng)
     if (_containsAny(fullText, [
-      'mart', 'siêu thị', 'store', 'shop', 'winmart', 'circle k', 'familymart',
-      '7-eleven', 'bách hóa xanh', 'co.opmart', 'big c', 'lotte', 'quần áo',
-      'thời trang', 'zara', 'uniqlo', 'thiết bị', 'điện tử', 'gear', 'chuột',
-      'tai nghe', 'phụ kiện', 'pharmacity', 'tiện ích', 'đồ dùng'
+      'mart',
+      'siêu thị',
+      'store',
+      'shop',
+      'winmart',
+      'circle k',
+      'familymart',
+      '7-eleven',
+      'bách hóa xanh',
+      'co.opmart',
+      'big c',
+      'lotte',
+      'quần áo',
+      'thời trang',
+      'zara',
+      'uniqlo',
+      'thiết bị',
+      'điện tử',
+      'gear',
+      'chuột',
+      'tai nghe',
+      'phụ kiện',
+      'pharmacity',
+      'tiện ích',
+      'đồ dùng',
     ])) {
       return ExpenseCategory.gear.id;
     }
 
     // 5. Entertainment (Giải trí)
     if (_containsAny(fullText, [
-      'cinema', 'cgv', 'bhd', 'lotte cinema', 'game', 'rạp chiếu phim', 'karaoke',
-      'billiards', 'vé xem phim', 'tour', 'du lịch'
+      'cinema',
+      'cgv',
+      'bhd',
+      'lotte cinema',
+      'game',
+      'rạp chiếu phim',
+      'karaoke',
+      'billiards',
+      'vé xem phim',
+      'tour',
+      'du lịch',
     ])) {
       return ExpenseCategory.entertainment.id;
     }

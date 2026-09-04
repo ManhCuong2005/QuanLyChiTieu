@@ -28,34 +28,37 @@ class Expense {
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'amount': amount,
-        'category': category.toJson(),
-        'date': date.toIso8601String(),
-        'merchant': merchant,
-        'note': note,
-        'receiptImagePath': receiptImagePath,
-        'rawOcrText': rawOcrText,
-        'isOcrScanned': isOcrScanned,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'amount': amount,
+    'category': category.toJson(),
+    'date': date.toIso8601String(),
+    'merchant': merchant,
+    'note': note,
+    'receiptImagePath': receiptImagePath,
+    'rawOcrText': rawOcrText,
+    'isOcrScanned': isOcrScanned,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory Expense.fromJson(Map<String, dynamic> json) {
     return Expense(
       id: json['id'] as String,
       title: json['title'] as String,
       amount: (json['amount'] as num).toDouble(),
-      category: ExpenseCategory.fromJson(json['category'] as Map<String, dynamic>),
+      category: ExpenseCategory.fromJson(
+        json['category'] as Map<String, dynamic>,
+      ),
       date: DateTime.parse(json['date'] as String),
       merchant: json['merchant'] as String? ?? '',
       note: json['note'] as String? ?? '',
       receiptImagePath: json['receiptImagePath'] as String?,
       rawOcrText: json['rawOcrText'] as String?,
       isOcrScanned: json['isOcrScanned'] as bool? ?? false,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : null,
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'] as String)
+              : null,
     );
   }
 

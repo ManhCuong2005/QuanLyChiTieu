@@ -16,7 +16,10 @@ class ExpenseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+    );
     final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
 
     return Card(
@@ -68,9 +71,14 @@ class ExpenseCard extends StatelessWidget {
                         ),
                         if (expense.isOcrScanned)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                              color: const Color(
+                                0xFF6366F1,
+                              ).withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Row(
@@ -107,7 +115,10 @@ class ExpenseCard extends StatelessWidget {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const Text(' • ', style: TextStyle(color: Colors.grey)),
+                          const Text(
+                            ' • ',
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         ],
                         Text(
                           dateFormatter.format(expense.date),
@@ -136,7 +147,11 @@ class ExpenseCard extends StatelessWidget {
                   ),
                   if (onDelete != null)
                     IconButton(
-                      icon: Icon(Icons.delete_outline_rounded, size: 18, color: Colors.grey.shade400),
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 18,
+                        color: Colors.grey.shade400,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: onDelete,

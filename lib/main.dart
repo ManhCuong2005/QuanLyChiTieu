@@ -14,10 +14,7 @@ void main() async {
 class ExpenseTrackerApp extends StatelessWidget {
   final DatabaseService databaseService;
 
-  const ExpenseTrackerApp({
-    super.key,
-    required this.databaseService,
-  });
+  const ExpenseTrackerApp({super.key, required this.databaseService});
 
   @override
   Widget build(BuildContext context) {

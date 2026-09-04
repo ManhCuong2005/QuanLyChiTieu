@@ -7,6 +7,7 @@ import '../models/category.dart';
 import '../models/receipt_result.dart';
 import '../services/ocr_service.dart';
 import '../services/database_service.dart';
+import '../services/receipt_image_storage.dart';
 
 class ScanReceiptScreen extends StatefulWidget {
   final DatabaseService databaseService;
@@ -58,12 +59,17 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       _isProcessing = true;
       _pickedImagePath = path;
     });
-    final result = await OcrService.processReceiptFromPath(path);
-    _applyParsedResult(result);
-    if (mounted) {
-      setState(() {
-        _isProcessing = false;
-      });
+    try {
+      final result = await OcrService.processReceiptFromPath(path);
+      if (mounted) _applyParsedResult(result);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi nhận diện hóa đơn: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
     }
   }
 
@@ -108,9 +114,9 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       _applyParsedResult(result);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi xử lý ảnh: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi khi xử lý ảnh: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -181,10 +187,14 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
     }
   }
 
-  void _saveExpense() {
+  Future<void> _saveExpense() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final amount = double.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final amount =
+        double.tryParse(
+          _amountController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+        ) ??
+        0.0;
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng nhập số tiền hợp lệ')),
@@ -192,20 +202,33 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       return;
     }
 
+    final expenseId = const Uuid().v4();
+    String? cachedImagePath = _pickedImagePath;
+    try {
+      cachedImagePath = await cacheReceiptImage(_pickedImagePath, expenseId);
+    } catch (e) {
+      debugPrint('Could not cache receipt image: $e');
+    }
+
     final newExpense = Expense(
-      id: const Uuid().v4(),
-      title: _titleController.text.trim().isEmpty ? _merchantController.text : _titleController.text.trim(),
+      id: expenseId,
+      title:
+          _titleController.text.trim().isEmpty
+              ? _merchantController.text
+              : _titleController.text.trim(),
       amount: amount,
       category: _selectedCategory,
       date: _selectedDate,
       merchant: _merchantController.text.trim(),
       note: _noteController.text.trim(),
-      receiptImagePath: _pickedImagePath,
+      receiptImagePath: cachedImagePath,
       rawOcrText: _parsedResult?.rawText,
       isOcrScanned: true,
     );
 
-    widget.databaseService.addExpense(newExpense);
+    await widget.databaseService.addExpense(newExpense);
+
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -229,7 +252,13 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
             TextButton.icon(
               onPressed: _saveExpense,
               icon: const Icon(Icons.check_rounded, color: Colors.white),
-              label: const Text('Lưu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Lưu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
         ],
       ),
@@ -241,10 +270,16 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
             // Action Buttons Card
             Card(
               elevation: 0,
-              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: 0.3),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+                side: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.2),
+                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -253,42 +288,66 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.document_scanner_rounded, color: Color(0xFF3B82F6), size: 24),
+                        Icon(
+                          Icons.document_scanner_rounded,
+                          color: Color(0xFF3B82F6),
+                          size: 24,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Google ML Kit OCR & Regex Parser',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Tự động bóc tách: Tổng tiền, Ngày giờ, Tên nơi bán',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: _isProcessing ? null : () => _pickAndProcessImage(ImageSource.camera),
+                            onPressed:
+                                _isProcessing
+                                    ? null
+                                    : () => _pickAndProcessImage(
+                                      ImageSource.camera,
+                                    ),
                             icon: const Icon(Icons.camera_alt_rounded),
                             label: const Text('Chụp ảnh'),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: _isProcessing ? null : () => _pickAndProcessImage(ImageSource.gallery),
+                            onPressed:
+                                _isProcessing
+                                    ? null
+                                    : () => _pickAndProcessImage(
+                                      ImageSource.gallery,
+                                    ),
                             icon: const Icon(Icons.photo_library_rounded),
                             label: const Text('Chọn từ máy'),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
@@ -304,7 +363,10 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
             // Sample Receipts Section for Live Demo & Testing
             ExpansionTile(
               initiallyExpanded: _parsedResult == null,
-              leading: const Icon(Icons.receipt_long_rounded, color: Color(0xFF8B5CF6)),
+              leading: const Icon(
+                Icons.receipt_long_rounded,
+                color: Color(0xFF8B5CF6),
+              ),
               title: const Text(
                 'Thử nghiệm hóa đơn mẫu (Live Demo)',
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
@@ -315,19 +377,36 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
               ),
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: OcrService.sampleReceipts.map((sample) {
-                      return ActionChip(
-                        avatar: const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF8B5CF6)),
-                        label: Text(sample['title']!),
-                        onPressed: _isProcessing ? null : () => _processSampleReceipt(sample),
-                        backgroundColor: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                        side: BorderSide(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
-                      );
-                    }).toList(),
+                    children:
+                        OcrService.sampleReceipts.map((sample) {
+                          return ActionChip(
+                            avatar: const Icon(
+                              Icons.bolt_rounded,
+                              size: 16,
+                              color: Color(0xFF8B5CF6),
+                            ),
+                            label: Text(sample['title']!),
+                            onPressed:
+                                _isProcessing
+                                    ? null
+                                    : () => _processSampleReceipt(sample),
+                            backgroundColor: const Color(
+                              0xFF8B5CF6,
+                            ).withValues(alpha: 0.08),
+                            side: BorderSide(
+                              color: const Color(
+                                0xFF8B5CF6,
+                              ).withValues(alpha: 0.3),
+                            ),
+                          );
+                        }).toList(),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -358,15 +437,24 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
             if (_parsedResult != null) ...[
               // Confidence Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: Color(0xFF10B981),
+                      size: 20,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -397,13 +485,21 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                         labelText: 'Tổng số tiền (VNĐ) *',
                         prefixIcon: const Icon(Icons.attach_money_rounded),
                         suffixText: 'VNĐ',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                       ),
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFDC2626),
+                      ),
                       validator: (val) {
-                        if (val == null || val.trim().isEmpty) return 'Vui lòng nhập số tiền';
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Vui lòng nhập số tiền';
+                        }
                         return null;
                       },
                     ),
@@ -416,7 +512,9 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                       decoration: InputDecoration(
                         labelText: 'Tên nơi bán / Cửa hàng',
                         prefixIcon: const Icon(Icons.storefront_rounded),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                       ),
@@ -430,12 +528,16 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                       decoration: InputDecoration(
                         labelText: 'Tiêu đề chi tiêu *',
                         prefixIcon: const Icon(Icons.title_rounded),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                       ),
                       validator: (val) {
-                        if (val == null || val.trim().isEmpty) return 'Vui lòng nhập tiêu đề';
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Vui lòng nhập tiêu đề';
+                        }
                         return null;
                       },
                     ),
@@ -450,7 +552,9 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                         decoration: InputDecoration(
                           labelText: 'Ngày giao dịch',
                           prefixIcon: const Icon(Icons.calendar_today_rounded),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           filled: true,
                           fillColor: Colors.white,
                         ),
@@ -466,32 +570,44 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                     // Category Selector Chips
                     const Text(
                       'Danh mục chi tiêu:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: ExpenseCategory.defaultCategories.map((cat) {
-                        final isSelected = _selectedCategory.id == cat.id;
-                        return ChoiceChip(
-                          avatar: Icon(cat.icon, size: 16, color: isSelected ? Colors.white : cat.color),
-                          label: Text(cat.name),
-                          selected: isSelected,
-                          selectedColor: cat.color,
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          ),
-                          onSelected: (selected) {
-                            if (selected) {
-                              setState(() {
-                                _selectedCategory = cat;
-                              });
-                            }
-                          },
-                        );
-                      }).toList(),
+                      children:
+                          ExpenseCategory.defaultCategories.map((cat) {
+                            final isSelected = _selectedCategory.id == cat.id;
+                            return ChoiceChip(
+                              avatar: Icon(
+                                cat.icon,
+                                size: 16,
+                                color: isSelected ? Colors.white : cat.color,
+                              ),
+                              label: Text(cat.name),
+                              selected: isSelected,
+                              selectedColor: cat.color,
+                              labelStyle: TextStyle(
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                              ),
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() {
+                                    _selectedCategory = cat;
+                                  });
+                                }
+                              },
+                            );
+                          }).toList(),
                     ),
 
                     const SizedBox(height: 16),
@@ -503,7 +619,9 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                       decoration: InputDecoration(
                         labelText: 'Ghi chú thêm',
                         prefixIcon: const Icon(Icons.note_rounded),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                       ),
@@ -518,10 +636,20 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                           _showRawText = !_showRawText;
                         });
                       },
-                      icon: Icon(_showRawText ? Icons.visibility_off_rounded : Icons.visibility_rounded),
-                      label: Text(_showRawText ? 'Ẩn văn bản thô OCR' : 'Xem chi tiết văn bản thô OCR'),
+                      icon: Icon(
+                        _showRawText
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
+                      ),
+                      label: Text(
+                        _showRawText
+                            ? 'Ẩn văn bản thô OCR'
+                            : 'Xem chi tiết văn bản thô OCR',
+                      ),
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
 
@@ -537,7 +665,10 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                         ),
                         child: SelectableText(
                           _parsedResult!.rawText,
-                          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -553,12 +684,17 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                         icon: const Icon(Icons.check_circle_rounded),
                         label: const Text(
                           'LƯU VÀO SỔ CHI TIÊU',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF10B981),
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                       ),
                     ),

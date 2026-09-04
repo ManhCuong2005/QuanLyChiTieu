@@ -97,10 +97,10 @@ class ExpenseCategory {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'englishName': englishName,
-      };
+    'id': id,
+    'name': name,
+    'englishName': englishName,
+  };
 
   factory ExpenseCategory.fromJson(Map<String, dynamic> json) {
     return fromId(json['id'] as String? ?? 'other');

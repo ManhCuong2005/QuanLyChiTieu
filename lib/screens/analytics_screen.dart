@@ -8,14 +8,14 @@ import '../widgets/charts/custom_bar_chart.dart';
 class AnalyticsScreen extends StatelessWidget {
   final DatabaseService databaseService;
 
-  const AnalyticsScreen({
-    super.key,
-    required this.databaseService,
-  });
+  const AnalyticsScreen({super.key, required this.databaseService});
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+    );
     final expenses = databaseService.expenses;
     final totalSpending = databaseService.totalSpending;
     final categoryData = databaseService.categoryBreakdown;
@@ -34,9 +34,7 @@ class AnalyticsScreen extends StatelessWidget {
     final ocrCount = expenses.where((e) => e.isOcrScanned).length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Thống Kê & Báo Cáo'),
-      ),
+      appBar: AppBar(title: const Text('Thống Kê & Báo Cáo')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -107,14 +105,20 @@ class AnalyticsScreen extends StatelessWidget {
                         SizedBox(width: 8),
                         Text(
                           'Chi tiêu 7 ngày qua (CustomPainter Bar Chart)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Chạm vào từng cột để xem chi tiết số tiền chi tiêu',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     AnimatedBarChart(
@@ -147,20 +151,23 @@ class AnalyticsScreen extends StatelessWidget {
                         SizedBox(width: 8),
                         Text(
                           'Cơ cấu chi theo danh mục (CustomPainter Pie Chart)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Chạm vào từng lát cắt để xem chi tiết phần trăm & số tiền',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    AnimatedPieChart(
-                      data: categoryData,
-                      height: 240,
-                    ),
+                    AnimatedPieChart(data: categoryData, height: 240),
                   ],
                 ),
               ),
@@ -182,18 +189,25 @@ class AnalyticsScreen extends StatelessWidget {
                   children: [
                     const Text(
                       'Chi tiết theo từng danh mục',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                     const SizedBox(height: 14),
                     if (categoryData.isEmpty)
                       const Center(
-                        child: Text('Chưa có dữ liệu', style: TextStyle(color: Colors.grey)),
+                        child: Text(
+                          'Chưa có dữ liệu',
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       )
                     else
                       ...categoryData.entries.map((entry) {
                         final cat = entry.key;
                         final amount = entry.value;
-                        final percentage = totalSpending > 0 ? (amount / totalSpending) : 0.0;
+                        final percentage =
+                            totalSpending > 0 ? (amount / totalSpending) : 0.0;
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -207,17 +221,26 @@ class AnalyticsScreen extends StatelessWidget {
                                   Expanded(
                                     child: Text(
                                       cat.name,
-                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
                                   Text(
                                     currencyFormatter.format(amount),
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     '(${(percentage * 100).toStringAsFixed(1)}%)',
-                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -227,7 +250,9 @@ class AnalyticsScreen extends StatelessWidget {
                                 child: LinearProgressIndicator(
                                   value: percentage,
                                   backgroundColor: Colors.grey.shade100,
-                                  valueColor: AlwaysStoppedAnimation<Color>(cat.color),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    cat.color,
+                                  ),
                                   minHeight: 6,
                                 ),
                               ),
@@ -266,7 +291,11 @@ class AnalyticsScreen extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               Icon(icon, size: 18, color: color),
             ],

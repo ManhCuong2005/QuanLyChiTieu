@@ -18,6 +18,21 @@
 
   <title>OCR Expense Tracker & Receipt Parser</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Client-side OCR fallback for the PWA. Recognition runs in WebAssembly in
+       the user's browser; receipt images are not uploaded to an OCR service. -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script>
+    let receiptOcrWorker;
+    window.recognizeReceiptImage = async function (imageUrl) {
+      if (!window.Tesseract) {
+        throw new Error('Không tải được bộ OCR trên trình duyệt. Hãy kiểm tra kết nối mạng.');
+      }
+      receiptOcrWorker ??= await Tesseract.createWorker('vie+eng');
+      const result = await receiptOcrWorker.recognize(imageUrl);
+      return result.data.text || '';
+    };
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

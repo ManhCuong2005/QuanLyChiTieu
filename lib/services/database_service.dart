@@ -1,45 +1,31 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/expense.dart';
 import '../models/category.dart';
 import '../widgets/charts/custom_bar_chart.dart';
+import 'receipt_image_storage.dart';
+import 'expense_store.dart';
 
 class DatabaseService extends ChangeNotifier {
-  static const String _storageKey = 'expense_tracker_records_v1';
+  final ExpenseStore _store = ExpenseStore();
   List<Expense> _expenses = [];
 
   List<Expense> get expenses => List.unmodifiable(_expenses);
 
   /// Initialize and load saved expenses from storage
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_storageKey);
-
-    if (jsonStr != null && jsonStr.isNotEmpty) {
-      try {
-        final List<dynamic> list = jsonDecode(jsonStr);
-        _expenses = list.map((item) => Expense.fromJson(item as Map<String, dynamic>)).toList();
-        // Sort newest first
-        _expenses.sort((a, b) => b.date.compareTo(a.date));
-      } catch (e) {
-        debugPrint('Error parsing stored expenses: $e');
-        _expenses = [];
-      }
-    } else {
-      // First time launch: start with empty list
+    try {
+      _expenses = await _store.load();
+      _expenses.sort((a, b) => b.date.compareTo(a.date));
+    } catch (e) {
+      debugPrint('Error loading expenses: $e');
       _expenses = [];
     }
     notifyListeners();
   }
 
-
-
   Future<void> _saveToDisk() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final list = _expenses.map((e) => e.toJson()).toList();
-      await prefs.setString(_storageKey, jsonEncode(list));
+      await _store.save(_expenses);
     } catch (e) {
       debugPrint('Error saving expenses to disk: $e');
     }
@@ -66,13 +52,21 @@ class DatabaseService extends ChangeNotifier {
 
   /// Delete expense
   Future<void> deleteExpense(String id) async {
+    final index = _expenses.indexWhere((item) => item.id == id);
+    final expense = index >= 0 ? _expenses[index] : null;
     _expenses.removeWhere((e) => e.id == id);
     await _saveToDisk();
+    try {
+      await deleteReceiptImage(expense?.receiptImagePath);
+    } catch (e) {
+      debugPrint('Error deleting cached receipt image: $e');
+    }
     notifyListeners();
   }
 
   /// Total spending across all records
-  double get totalSpending => _expenses.fold(0.0, (sum, item) => sum + item.amount);
+  double get totalSpending =>
+      _expenses.fold(0.0, (sum, item) => sum + item.amount);
 
   /// Spending grouped by category
   Map<ExpenseCategory, double> get categoryBreakdown {
@@ -96,16 +90,16 @@ class DatabaseService extends ChangeNotifier {
       final nextDay = day.add(const Duration(days: 1));
 
       final dayTotal = _expenses
-          .where((e) => e.date.isAfter(day.subtract(const Duration(seconds: 1))) && e.date.isBefore(nextDay))
+          .where(
+            (e) =>
+                e.date.isAfter(day.subtract(const Duration(seconds: 1))) &&
+                e.date.isBefore(nextDay),
+          )
           .fold(0.0, (sum, e) => sum + e.amount);
 
       final label = (i == 0) ? 'Hôm nay' : dayLabels[day.weekday - 1];
 
-      list.add(BarData(
-        label: label,
-        value: dayTotal,
-        date: day,
-      ));
+      list.add(BarData(label: label, value: dayTotal, date: day));
     }
 
     return list;

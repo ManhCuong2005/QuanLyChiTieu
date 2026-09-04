@@ -35,7 +35,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final item = widget.initialExpense;
     _titleController = TextEditingController(text: item?.title ?? '');
     _amountController = TextEditingController(
-        text: item != null ? item.amount.toStringAsFixed(0) : '');
+      text: item != null ? item.amount.toStringAsFixed(0) : '',
+    );
     _merchantController = TextEditingController(text: item?.merchant ?? '');
     _noteController = TextEditingController(text: item?.note ?? '');
 
@@ -75,7 +76,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   void _saveExpense() {
     if (!_formKey.currentState!.validate()) return;
 
-    final amount = double.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final amount =
+        double.tryParse(
+          _amountController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+        ) ??
+        0.0;
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng nhập số tiền hợp lệ')),
@@ -109,9 +114,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(widget.initialExpense != null
-            ? 'Đã cập nhật khoản chi tiêu!'
-            : 'Đã thêm chi tiêu thành công!'),
+        content: Text(
+          widget.initialExpense != null
+              ? 'Đã cập nhật khoản chi tiêu!'
+              : 'Đã thêm chi tiêu thành công!',
+        ),
         backgroundColor: const Color(0xFF10B981),
       ),
     );
@@ -143,13 +150,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   labelText: 'Số tiền (VNĐ) *',
                   prefixIcon: const Icon(Icons.attach_money_rounded),
                   suffixText: 'VNĐ',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                 ),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFDC2626),
+                ),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Vui lòng nhập số tiền';
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Vui lòng nhập số tiền';
+                  }
                   return null;
                 },
               ),
@@ -159,12 +174,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 decoration: InputDecoration(
                   labelText: 'Tên khoản chi tiêu *',
                   prefixIcon: const Icon(Icons.edit_note_rounded),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                 ),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Vui lòng nhập tên khoản chi';
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Vui lòng nhập tên khoản chi';
+                  }
                   return null;
                 },
               ),
@@ -174,7 +193,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 decoration: InputDecoration(
                   labelText: 'Nơi mua / Tên cửa hàng',
                   prefixIcon: const Icon(Icons.storefront_rounded),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                 ),
@@ -187,7 +208,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   decoration: InputDecoration(
                     labelText: 'Thời gian chi tiêu',
                     prefixIcon: const Icon(Icons.calendar_today_rounded),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                   ),
@@ -206,26 +229,32 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: ExpenseCategory.defaultCategories.map((cat) {
-                  final isSelected = _selectedCategory.id == cat.id;
-                  return ChoiceChip(
-                    avatar: Icon(cat.icon, size: 16, color: isSelected ? Colors.white : cat.color),
-                    label: Text(cat.name),
-                    selected: isSelected,
-                    selectedColor: cat.color,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black87,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _selectedCategory = cat;
-                        });
-                      }
-                    },
-                  );
-                }).toList(),
+                children:
+                    ExpenseCategory.defaultCategories.map((cat) {
+                      final isSelected = _selectedCategory.id == cat.id;
+                      return ChoiceChip(
+                        avatar: Icon(
+                          cat.icon,
+                          size: 16,
+                          color: isSelected ? Colors.white : cat.color,
+                        ),
+                        label: Text(cat.name),
+                        selected: isSelected,
+                        selectedColor: cat.color,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black87,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              _selectedCategory = cat;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -234,7 +263,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 decoration: InputDecoration(
                   labelText: 'Ghi chú thêm',
                   prefixIcon: const Icon(Icons.description_rounded),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                 ),
@@ -248,12 +279,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   icon: const Icon(Icons.save_rounded),
                   label: Text(
                     isEditing ? 'LƯU THAY ĐỔI' : 'THÊM KHOẢN CHI',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3B82F6),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ),

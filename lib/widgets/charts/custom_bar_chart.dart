@@ -7,11 +7,7 @@ class BarData {
   final double value;
   final DateTime date;
 
-  BarData({
-    required this.label,
-    required this.value,
-    required this.date,
-  });
+  BarData({required this.label, required this.value, required this.date});
 }
 
 class AnimatedBarChart extends StatefulWidget {
@@ -74,7 +70,11 @@ class _AnimatedBarChartState extends State<AnimatedBarChart>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.bar_chart_rounded, size: 48, color: Colors.grey.shade400),
+              Icon(
+                Icons.bar_chart_rounded,
+                size: 48,
+                color: Colors.grey.shade400,
+              ),
               const SizedBox(height: 8),
               Text(
                 'Chưa có dữ liệu chi tiêu',
@@ -86,7 +86,10 @@ class _AnimatedBarChartState extends State<AnimatedBarChart>
       );
     }
 
-    final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+    );
     final maxValue = widget.data.map((d) => d.value).fold(0.0, max);
     final safeMax = maxValue > 0 ? maxValue * 1.15 : 100000.0;
 
@@ -98,7 +101,9 @@ class _AnimatedBarChartState extends State<AnimatedBarChart>
             decoration: BoxDecoration(
               color: widget.primaryColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: widget.primaryColor.withValues(alpha: 0.4)),
+              border: Border.all(
+                color: widget.primaryColor.withValues(alpha: 0.4),
+              ),
             ),
             child: Text(
               '${widget.data[_selectedIndex!].label}: ${currencyFormatter.format(widget.data[_selectedIndex!].value)}',
@@ -127,10 +132,14 @@ class _AnimatedBarChartState extends State<AnimatedBarChart>
                   final slotWidth = availableWidth / count;
 
                   if (tapX >= leftMargin && tapX <= size.width - rightMargin) {
-                    final tappedIndex = ((tapX - leftMargin) / slotWidth).floor();
+                    final tappedIndex =
+                        ((tapX - leftMargin) / slotWidth).floor();
                     if (tappedIndex >= 0 && tappedIndex < count) {
                       setState(() {
-                        _selectedIndex = (_selectedIndex == tappedIndex) ? null : tappedIndex;
+                        _selectedIndex =
+                            (_selectedIndex == tappedIndex)
+                                ? null
+                                : tappedIndex;
                       });
                     }
                   } else {
@@ -196,9 +205,10 @@ class _BarChartPainter extends CustomPainter {
 
     // 1. Draw horizontal grid lines (4 lines)
     final compactFormatter = NumberFormat.compact(locale: 'vi_VN');
-    final gridPaint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.18)
-      ..strokeWidth = 1.0;
+    final gridPaint =
+        Paint()
+          ..color = Colors.grey.withValues(alpha: 0.18)
+          ..strokeWidth = 1.0;
 
     const gridLines = 4;
     for (int i = 0; i <= gridLines; i++) {
@@ -214,10 +224,7 @@ class _BarChartPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: i == 0 ? '0' : compactFormatter.format(val),
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey.shade500,
-          ),
+          style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
         ),
         textAlign: TextAlign.right,
         textDirection: TextDirection.ltr,
@@ -239,7 +246,8 @@ class _BarChartPainter extends CustomPainter {
       final isSelected = selectedIndex == i;
 
       final barCenterX = leftMargin + i * slotWidth + slotWidth / 2;
-      final barHeight = (item.value / maxValue) * chartHeight * animationProgress;
+      final barHeight =
+          (item.value / maxValue) * chartHeight * animationProgress;
       final barTop = topMargin + chartHeight - barHeight;
       final barRect = Rect.fromCenter(
         center: Offset(barCenterX, topMargin + chartHeight - barHeight / 2),
@@ -256,26 +264,29 @@ class _BarChartPainter extends CustomPainter {
       );
 
       // Gradient fill
-      final fillPaint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: isSelected
-              ? [primaryColor, primaryColor.withValues(alpha: 0.7)]
-              : [
-                  primaryColor.withValues(alpha: 0.85),
-                  primaryColor.withValues(alpha: 0.35),
-                ],
-        ).createShader(barRect);
+      final fillPaint =
+          Paint()
+            ..shader = LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors:
+                  isSelected
+                      ? [primaryColor, primaryColor.withValues(alpha: 0.7)]
+                      : [
+                        primaryColor.withValues(alpha: 0.85),
+                        primaryColor.withValues(alpha: 0.35),
+                      ],
+            ).createShader(barRect);
 
       canvas.drawRRect(barRRect, fillPaint);
 
       // Selection indicator border
       if (isSelected) {
-        final borderPaint = Paint()
-          ..color = primaryColor
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.0;
+        final borderPaint =
+            Paint()
+              ..color = primaryColor
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.0;
         canvas.drawRRect(barRRect, borderPaint);
 
         // Tooltip circle or pill above bar
@@ -299,7 +310,10 @@ class _BarChartPainter extends CustomPainter {
       labelPainter.layout(maxWidth: slotWidth);
       labelPainter.paint(
         canvas,
-        Offset(barCenterX - labelPainter.width / 2, size.height - bottomMargin + 6),
+        Offset(
+          barCenterX - labelPainter.width / 2,
+          size.height - bottomMargin + 6,
+        ),
       );
     }
   }

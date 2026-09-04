@@ -19,11 +19,7 @@ class AnimatedPieChart extends StatefulWidget {
   final Map<ExpenseCategory, double> data;
   final double height;
 
-  const AnimatedPieChart({
-    super.key,
-    required this.data,
-    this.height = 240,
-  });
+  const AnimatedPieChart({super.key, required this.data, this.height = 240});
 
   @override
   State<AnimatedPieChart> createState() => _AnimatedPieChartState();
@@ -66,7 +62,10 @@ class _AnimatedPieChartState extends State<AnimatedPieChart>
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+    );
     final totalAmount = widget.data.values.fold(0.0, (sum, val) => sum + val);
 
     if (totalAmount <= 0) {
@@ -76,7 +75,11 @@ class _AnimatedPieChartState extends State<AnimatedPieChart>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.pie_chart_outline_rounded, size: 48, color: Colors.grey.shade400),
+              Icon(
+                Icons.pie_chart_outline_rounded,
+                size: 48,
+                color: Colors.grey.shade400,
+              ),
               const SizedBox(height: 8),
               Text(
                 'Chưa có dữ liệu chi tiêu',
@@ -88,13 +91,14 @@ class _AnimatedPieChartState extends State<AnimatedPieChart>
       );
     }
 
-    final slices = widget.data.entries.map((e) {
-      return PieSliceData(
-        category: e.key,
-        amount: e.value,
-        percentage: (e.value / totalAmount) * 100,
-      );
-    }).toList();
+    final slices =
+        widget.data.entries.map((e) {
+          return PieSliceData(
+            category: e.key,
+            amount: e.value,
+            percentage: (e.value / totalAmount) * 100,
+          );
+        }).toList();
 
     return Column(
       children: [
@@ -125,7 +129,8 @@ class _AnimatedPieChartState extends State<AnimatedPieChart>
                     int? foundIndex;
                     for (int i = 0; i < slices.length; i++) {
                       final sweep = (slices[i].amount / totalAmount) * 2 * pi;
-                      if (angle >= currentAngle && angle <= currentAngle + sweep) {
+                      if (angle >= currentAngle &&
+                          angle <= currentAngle + sweep) {
                         foundIndex = i;
                         break;
                       }
@@ -133,7 +138,8 @@ class _AnimatedPieChartState extends State<AnimatedPieChart>
                     }
 
                     setState(() {
-                      _selectedIndex = (_selectedIndex == foundIndex) ? null : foundIndex;
+                      _selectedIndex =
+                          (_selectedIndex == foundIndex) ? null : foundIndex;
                     });
                   } else if (distance < holeRadius) {
                     setState(() {
@@ -166,7 +172,9 @@ class _AnimatedPieChartState extends State<AnimatedPieChart>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: slices[_selectedIndex!].category.color.withValues(alpha: 0.12),
+              color: slices[_selectedIndex!].category.color.withValues(
+                alpha: 0.12,
+              ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: slices[_selectedIndex!].category.color,
@@ -213,15 +221,20 @@ class _AnimatedPieChartState extends State<AnimatedPieChart>
               borderRadius: BorderRadius.circular(16),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? slice.category.color.withValues(alpha: 0.2)
-                      : Colors.transparent,
+                  color:
+                      isSelected
+                          ? slice.category.color.withValues(alpha: 0.2)
+                          : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
-                  border: isSelected
-                      ? Border.all(color: slice.category.color, width: 1.5)
-                      : null,
+                  border:
+                      isSelected
+                          ? Border.all(color: slice.category.color, width: 1.5)
+                          : null,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -239,7 +252,8 @@ class _AnimatedPieChartState extends State<AnimatedPieChart>
                       slice.category.name,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -290,37 +304,34 @@ class _PieChartPainter extends CustomPainter {
     for (int i = 0; i < slices.length; i++) {
       final slice = slices[i];
       final isSelected = selectedIndex == i;
-      final sweepAngle = (slice.amount / totalAmount) * 2 * pi * animationProgress;
+      final sweepAngle =
+          (slice.amount / totalAmount) * 2 * pi * animationProgress;
 
       final radius = isSelected ? baseRadius + 7 : baseRadius;
       final currentHoleRadius = isSelected ? holeRadius - 2 : holeRadius;
       final strokeWidth = radius - currentHoleRadius;
 
-      final paint = Paint()
-        ..color = slice.category.color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..isAntiAlias = true;
+      final paint =
+          Paint()
+            ..color = slice.category.color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = strokeWidth
+            ..isAntiAlias = true;
 
       final arcRect = Rect.fromCircle(
         center: center,
         radius: (radius + currentHoleRadius) / 2,
       );
 
-      canvas.drawArc(
-        arcRect,
-        startAngle,
-        sweepAngle,
-        false,
-        paint,
-      );
+      canvas.drawArc(arcRect, startAngle, sweepAngle, false, paint);
 
       // White divider between slices
       if (slices.length > 1) {
-        final dividerPaint = Paint()
-          ..color = theme.scaffoldBackgroundColor
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.0;
+        final dividerPaint =
+            Paint()
+              ..color = theme.scaffoldBackgroundColor
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.0;
 
         final dividerAngle = startAngle;
         final p1 = Offset(
@@ -338,13 +349,18 @@ class _PieChartPainter extends CustomPainter {
     }
 
     // Center Summary Text
-    final currencyFormatter = NumberFormat.compactCurrency(locale: 'vi_VN', symbol: 'đ');
-    final titleText = selectedIndex != null && selectedIndex! < slices.length
-        ? slices[selectedIndex!].category.name
-        : 'Tổng chi';
-    final amountText = selectedIndex != null && selectedIndex! < slices.length
-        ? currencyFormatter.format(slices[selectedIndex!].amount)
-        : currencyFormatter.format(totalAmount);
+    final currencyFormatter = NumberFormat.compactCurrency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+    );
+    final titleText =
+        selectedIndex != null && selectedIndex! < slices.length
+            ? slices[selectedIndex!].category.name
+            : 'Tổng chi';
+    final amountText =
+        selectedIndex != null && selectedIndex! < slices.length
+            ? currencyFormatter.format(slices[selectedIndex!].amount)
+            : currencyFormatter.format(totalAmount);
 
     final titlePainter = TextPainter(
       text: TextSpan(
@@ -372,7 +388,10 @@ class _PieChartPainter extends CustomPainter {
     titlePainter.layout(maxWidth: holeRadius * 1.8);
     titlePainter.paint(
       canvas,
-      Offset(center.dx - titlePainter.width / 2, center.dy - titlePainter.height / 2),
+      Offset(
+        center.dx - titlePainter.width / 2,
+        center.dy - titlePainter.height / 2,
+      ),
     );
   }
 

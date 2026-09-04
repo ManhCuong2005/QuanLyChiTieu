@@ -18,6 +18,7 @@
 2. **On-Device AI với Google ML Kit Text Recognition**:
    - Nhận diện ký tự quang học (OCR) trực tiếp trên thiết bị (On-Device).
    - Hoạt động hoàn toàn **Offline**, bảo mật dữ liệu chi tiêu cá nhân, không tốn phí API đám mây.
+   - Android/iOS dùng Google ML Kit; bản Web/PWA dùng Tesseract.js WebAssembly chạy ngay trong trình duyệt (lần đầu cần tải mô hình OCR).
 
 3. **Thuật toán Regex Heuristic Parser bóc tách hóa đơn**:
    - **Monetary Totals**: Bóc tách tổng số tiền dựa trên quy tắc trọng số ngữ cảnh (`Tổng tiền`, `Total`, `Thanh toán`, `Cộng`, loại trừ dòng `VAT`, `Tiền khách đưa`, `Tiền thối`).
@@ -78,6 +79,8 @@ mini_project3/
 ### Yêu cầu tiên quyết
 - **Flutter SDK:** Phiên bản 3.x (Đã kiểm thử trên Flutter 3.29.0)
 - **Dart SDK:** Phiên bản 3.x (Dart 3.7+)
+- **Android:** SDK/compile SDK 35 và NDK `27.0.12077973`
+- **iOS:** iOS 15.5+, Xcode 15.3+ và CocoaPods
 - Trình duyệt Chrome / Edge hoặc Máy ảo Android / Thiết bị thật.
 
 ### 1. Khởi chạy trên Web (Local)

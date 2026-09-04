@@ -9,10 +9,7 @@ import 'add_expense_screen.dart';
 class ExpenseListScreen extends StatefulWidget {
   final DatabaseService databaseService;
 
-  const ExpenseListScreen({
-    super.key,
-    required this.databaseService,
-  });
+  const ExpenseListScreen({super.key, required this.databaseService});
 
   @override
   State<ExpenseListScreen> createState() => _ExpenseListScreenState();
@@ -24,25 +21,34 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+    );
     final allExpenses = widget.databaseService.expenses;
 
-    final filtered = allExpenses.where((expense) {
-      final matchesSearch = expense.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          expense.merchant.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          expense.note.toLowerCase().contains(_searchQuery.toLowerCase());
+    final filtered =
+        allExpenses.where((expense) {
+          final matchesSearch =
+              expense.title.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ||
+              expense.merchant.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ||
+              expense.note.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      final matchesCategory = _selectedCategoryId == 'all' || expense.category.id == _selectedCategoryId;
+          final matchesCategory =
+              _selectedCategoryId == 'all' ||
+              expense.category.id == _selectedCategoryId;
 
-      return matchesSearch && matchesCategory;
-    }).toList();
+          return matchesSearch && matchesCategory;
+        }).toList();
 
     final filteredTotal = filtered.fold(0.0, (sum, e) => sum + e.amount);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sổ Giao Dịch Chi Tiêu'),
-      ),
+      appBar: AppBar(title: const Text('Sổ Giao Dịch Chi Tiêu')),
       body: Column(
         children: [
           // Search & Filter Box
@@ -52,13 +58,17 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
               decoration: InputDecoration(
                 hintText: 'Tìm kiếm theo tên, cửa hàng, ghi chú...',
                 prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded),
-                        onPressed: () => setState(() => _searchQuery = ''),
-                      )
-                    : null,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                suffixIcon:
+                    _searchQuery.isNotEmpty
+                        ? IconButton(
+                          icon: const Icon(Icons.clear_rounded),
+                          onPressed: () => setState(() => _searchQuery = ''),
+                        )
+                        : null,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 0,
+                  horizontal: 16,
+                ),
                 filled: true,
                 fillColor: Colors.grey.shade100,
                 border: OutlineInputBorder(
@@ -95,13 +105,18 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
-                      avatar: Icon(cat.icon, size: 14, color: isSelected ? Colors.white : cat.color),
+                      avatar: Icon(
+                        cat.icon,
+                        size: 14,
+                        color: isSelected ? Colors.white : cat.color,
+                      ),
                       label: Text(cat.name),
                       selected: isSelected,
                       selectedColor: cat.color,
                       labelStyle: TextStyle(
                         color: isSelected ? Colors.white : Colors.black87,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                       onSelected: (selected) {
                         setState(() {
@@ -145,42 +160,51 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
           // List
           Expanded(
-            child: filtered.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.search_off_rounded, size: 54, color: Colors.grey.shade300),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Không có giao dịch nào phù hợp',
-                          style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final exp = filtered[index];
-                      return ExpenseCard(
-                        expense: exp,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddExpenseScreen(
-                                databaseService: widget.databaseService,
-                                initialExpense: exp,
-                              ),
+            child:
+                filtered.isEmpty
+                    ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 54,
+                            color: Colors.grey.shade300,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Không có giao dịch nào phù hợp',
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 14,
                             ),
-                          );
-                        },
-                        onDelete: () => _confirmDelete(exp),
-                      );
-                    },
-                  ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final exp = filtered[index];
+                        return ExpenseCard(
+                          expense: exp,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => AddExpenseScreen(
+                                      databaseService: widget.databaseService,
+                                      initialExpense: exp,
+                                    ),
+                              ),
+                            );
+                          },
+                          onDelete: () => _confirmDelete(exp),
+                        );
+                      },
+                    ),
           ),
         ],
       ),
@@ -190,30 +214,33 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   void _confirmDelete(Expense expense) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Xóa giao dịch này?'),
-        content: Text('Bạn có chắc muốn xóa "${expense.title}"? Thao tác này không thể hoàn tác.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              widget.databaseService.deleteExpense(expense.id);
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Đã xóa giao dịch')),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Xóa giao dịch này?'),
+            content: Text(
+              'Bạn có chắc muốn xóa "${expense.title}"? Thao tác này không thể hoàn tác.',
             ),
-            child: const Text('Xóa'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Hủy'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  widget.databaseService.deleteExpense(expense.id);
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã xóa giao dịch')),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEF4444),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Xóa'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }

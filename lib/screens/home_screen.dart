@@ -11,10 +11,7 @@ import 'analytics_screen.dart';
 class HomeScreen extends StatefulWidget {
   final DatabaseService databaseService;
 
-  const HomeScreen({
-    super.key,
-    required this.databaseService,
-  });
+  const HomeScreen({super.key, required this.databaseService});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -35,10 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ];
 
         return Scaffold(
-          body: IndexedStack(
-            index: _currentIndex,
-            children: screens,
-          ),
+          body: IndexedStack(index: _currentIndex, children: screens),
           bottomNavigationBar: NavigationBar(
             selectedIndex: _currentIndex,
             onDestinationSelected: (index) {
@@ -67,7 +61,10 @@ class _HomeScreenState extends State<HomeScreen> {
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _openScanReceiptScreen(context),
             icon: const Icon(Icons.document_scanner_rounded),
-            label: const Text('Quét Hóa Đơn (OCR)', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: const Text(
+              'Quét Hóa Đơn (OCR)',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             backgroundColor: const Color(0xFF6366F1),
             foregroundColor: Colors.white,
           ),
@@ -77,7 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDashboardTab(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+    );
     final totalSpending = widget.databaseService.totalSpending;
     final recentExpenses = widget.databaseService.expenses.take(4).toList();
     final barData = widget.databaseService.getLast7DaysData();
@@ -86,9 +86,15 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Row(
           children: [
-            Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF6366F1)),
+            Icon(
+              Icons.account_balance_wallet_rounded,
+              color: Color(0xFF6366F1),
+            ),
             SizedBox(width: 8),
-            Text('Quản Lý Chi Tiêu OCR', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Quản Lý Chi Tiêu OCR',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         actions: [
@@ -99,7 +105,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => AddExpenseScreen(databaseService: widget.databaseService),
+                  builder:
+                      (_) => AddExpenseScreen(
+                        databaseService: widget.databaseService,
+                      ),
                 ),
               );
             },
@@ -147,18 +156,29 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.verified_rounded, size: 14, color: Colors.white),
+                              Icon(
+                                Icons.verified_rounded,
+                                size: 14,
+                                color: Colors.white,
+                              ),
                               SizedBox(width: 4),
                               Text(
                                 'AI On-Device',
-                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ],
                           ),
@@ -187,7 +207,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildHeroSubStat(
                           icon: Icons.document_scanner_rounded,
                           label: 'OCR Bills',
-                          value: '${widget.databaseService.expenses.where((e) => e.isOcrScanned).length}',
+                          value:
+                              '${widget.databaseService.expenses.where((e) => e.isOcrScanned).length}',
                         ),
                       ],
                     ),
@@ -218,7 +239,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => AddExpenseScreen(databaseService: widget.databaseService),
+                              builder:
+                                  (_) => AddExpenseScreen(
+                                    databaseService: widget.databaseService,
+                                  ),
                             ),
                           );
                         },
@@ -250,7 +274,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
-                    side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+                    side: BorderSide(
+                      color: Colors.grey.withValues(alpha: 0.15),
+                    ),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -262,7 +288,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             const Text(
                               'Chi tiêu tuần này',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                             TextButton(
                               onPressed: () {
@@ -275,10 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        AnimatedBarChart(
-                          data: barData,
-                          height: 180,
-                        ),
+                        AnimatedBarChart(data: barData, height: 180),
                       ],
                     ),
                   ),
@@ -295,7 +321,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const Text(
                       'Giao dịch gần đây',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     TextButton(
                       onPressed: () {
@@ -314,7 +343,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Padding(
                   padding: EdgeInsets.all(32),
                   child: Center(
-                    child: Text('Chưa có chi tiêu nào. Hãy quét hóa đơn đầu tiên!'),
+                    child: Text(
+                      'Chưa có chi tiêu nào. Hãy quét hóa đơn đầu tiên!',
+                    ),
                   ),
                 )
               else
@@ -325,10 +356,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => AddExpenseScreen(
-                            databaseService: widget.databaseService,
-                            initialExpense: expense,
-                          ),
+                          builder:
+                              (_) => AddExpenseScreen(
+                                databaseService: widget.databaseService,
+                                initialExpense: expense,
+                              ),
                         ),
                       );
                     },
@@ -355,11 +387,18 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(width: 6),
         Text(
           '$label: ',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.8),
+            fontSize: 12,
+          ),
         ),
         Text(
           value,
-          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
@@ -404,7 +443,9 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CameraViewfinderScreen(databaseService: widget.databaseService),
+        builder:
+            (_) =>
+                CameraViewfinderScreen(databaseService: widget.databaseService),
       ),
     );
   }

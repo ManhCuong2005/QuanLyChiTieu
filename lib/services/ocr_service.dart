@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'receipt_parser.dart';
 import '../models/receipt_result.dart';
+import 'web_ocr_stub.dart' if (dart.library.html) 'web_ocr.dart' as web_ocr;
 
 /// Service responsible for running OCR recognition and receipt heuristic extraction.
 /// Uses Google ML Kit Text Recognition for on-device offline parsing on Mobile,
@@ -13,22 +14,30 @@ class OcrService {
 
     if (!kIsWeb) {
       // 1. Mobile (Android/iOS): Use Google ML Kit Text Recognition
+      final textRecognizer = TextRecognizer(
+        script: TextRecognitionScript.latin,
+      );
       try {
         final inputImage = InputImage.fromFilePath(imagePath);
-        final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-        
-        final RecognizedText mlKitResult = await textRecognizer.processImage(inputImage);
+        final RecognizedText mlKitResult = await textRecognizer.processImage(
+          inputImage,
+        );
         recognizedText = mlKitResult.text;
-        
-        await textRecognizer.close();
       } catch (e) {
         debugPrint('Google ML Kit error: $e');
-        // Fallback to sample text if camera on emulator has issue
-        recognizedText = _getFallbackReceiptText();
+        throw Exception('ML Kit không thể đọc ảnh hóa đơn: $e');
+      } finally {
+        await textRecognizer.close();
       }
     } else {
-      // 2. Web Live Demo fallback
-      recognizedText = _getFallbackReceiptText();
+      // 2. Web/PWA: run Tesseract WebAssembly locally in the browser.
+      recognizedText = await web_ocr.recognizeReceiptImage(imagePath);
+    }
+
+    if (recognizedText.trim().isEmpty) {
+      throw Exception(
+        'Không nhận diện được chữ trong ảnh. Hãy chụp rõ hơn và thử lại.',
+      );
     }
 
     // Run Regex Heuristic Engine
@@ -38,28 +47,6 @@ class OcrService {
   /// Process receipt directly from pre-defined or custom text
   static ReceiptResult processReceiptText(String text) {
     return ReceiptParser.parse(text);
-  }
-
-  /// Default fallback sample text for quick live demo testing
-  static String _getFallbackReceiptText() {
-    return '''
-HIGHLANDS COFFEE
-Dia chi: 123 Nguyen Trai, Q.1, TP.HCM
-Ngay: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} 10:15
-Thu ngan: Nguyen Van A
-
-1  Phin Sua Da (L)       39.000
-1  Tra Sen Vang (M)      45.000
-1  Banh Mi Thit Nuong    25.000
-
-Cong tien hang:         109.000
-VAT (10%):               10.900
-Tong cong:              119.900
-Tien khach dua:         200.000
-Tien thoi:               80.100
-
-Cam on quy khach & Hen gap lai!
-''';
   }
 
   /// Pre-built sample receipts for testing and presentation
