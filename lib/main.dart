@@ -13,8 +13,13 @@ void main() async {
 
 class ExpenseTrackerApp extends StatelessWidget {
   final DatabaseService databaseService;
+  final bool autoCheckForUpdates;
 
-  const ExpenseTrackerApp({super.key, required this.databaseService});
+  const ExpenseTrackerApp({
+    super.key,
+    required this.databaseService,
+    this.autoCheckForUpdates = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +49,10 @@ class ExpenseTrackerApp extends StatelessWidget {
           ),
         ),
       ),
-      home: HomeScreen(databaseService: databaseService),
+      home: HomeScreen(
+        databaseService: databaseService,
+        autoCheckForUpdates: autoCheckForUpdates,
+      ),
     );
   }
 }

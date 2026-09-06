@@ -486,7 +486,34 @@ class ReceiptParser {
       return ExpenseCategory.travel.id;
     }
 
-    // 4. Gear (Thiết bị & Đồ dùng)
+    // 4. Housing (Tiền trọ)
+    if (_containsAny(fullText, [
+      'tiền trọ',
+      'tien tro',
+      'thuê phòng',
+      'thue phong',
+      'tiền nhà',
+      'tien nha',
+      'ký túc xá',
+    ])) {
+      return ExpenseCategory.housing.id;
+    }
+
+    // 5. Utilities (Điện & nước)
+    if (_containsAny(fullText, [
+      'tiền điện',
+      'tien dien',
+      'tiền nước',
+      'tien nuoc',
+      'hóa đơn điện',
+      'hóa đơn nước',
+      'evn',
+      'cấp nước',
+    ])) {
+      return ExpenseCategory.utilities.id;
+    }
+
+    // 6. Gear (Thiết bị & Đồ dùng)
     if (_containsAny(fullText, [
       'mart',
       'siêu thị',
@@ -517,7 +544,7 @@ class ReceiptParser {
       return ExpenseCategory.gear.id;
     }
 
-    // 5. Entertainment (Giải trí)
+    // 7. Entertainment (Giải trí)
     if (_containsAny(fullText, [
       'cinema',
       'cgv',

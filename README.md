@@ -1,14 +1,33 @@
 # Mini-Project 3: OCR Expense Tracker & Receipt Parser (Flutter & Dart)
 
+> **Bản nộp chính: Android APK.** Google ML Kit Text Recognition trong project chỉ chạy trên Android/iOS và không hỗ trợ Flutter Web. Bản Web/Cloudflare Pages là demo phụ: OCR dùng Tesseract.js trong trình duyệt, không phải Google ML Kit, và cần tải model ở lần sử dụng đầu tiên.
+
+## Phạm vi nền tảng
+
+| Nền tảng | OCR | Lưu trữ | Mục đích |
+|---|---|---|---|
+| Android APK | Google ML Kit on-device, có thể xử lý offline sau khi app được cài đặt | SQLite (`sqflite`) và ảnh cục bộ | Bản đầy đủ để chấm/nộp |
+| Web / Cloudflare Pages | Tesseract.js WebAssembly, cần tải script/model qua mạng lần đầu | `SharedPreferences` của trình duyệt | Demo giao diện và luồng phụ |
+
+Build APK release:
+
+```bash
+flutter pub get
+flutter test
+flutter build apk --release
+```
+
+File đầu ra: `build/app/outputs/flutter-apk/app-release.apk`.
+
 > **Môn học:** Lập trình Đa Nền Tảng  
 > **Đề tài:** Quản Lý Chi Tiêu & Bóc Tách Hóa Đơn Tự Động bằng On-Device AI (Google ML Kit) & Regex Heuristic  
-> **Nền tảng hỗ trợ:** Web (PWA), Android, iOS, Windows, macOS, Linux  
+> **Nền tảng mục tiêu:** Android (đầy đủ); Web/PWA (demo phụ với OCR thay thế)  
 
 ---
 
 ## 🌟 Giới thiệu tổng quan
 
-Ứng dụng **OCR Expense Tracker & Receipt Parser** được xây dựng bằng **Flutter 3.x** và **Dart 3**, đáp ứng trọn vẹn 100% các mục tiêu học tập (Learning Objectives) của bài tập:
+Ứng dụng **OCR Expense Tracker & Receipt Parser** được xây dựng bằng **Flutter 3.x** và **Dart 3**, triển khai các mục tiêu chính của bài tập trên Android:
 
 1. **Quản lý tài chính cá nhân thông minh (Personal Finance App)**:
    - Quản lý thu chi đầy đủ (CRUD): Thêm, Sửa, Xóa, Tìm kiếm, Lọc theo danh mục.

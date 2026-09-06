@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/expense.dart';
 import '../models/category.dart';
 import '../widgets/charts/custom_bar_chart.dart';
@@ -8,18 +10,103 @@ import 'expense_store.dart';
 class DatabaseService extends ChangeNotifier {
   final ExpenseStore _store = ExpenseStore();
   List<Expense> _expenses = [];
+  List<ExpenseCategory> _customCategories = [];
+  Map<String, double> _monthlyBudgets = {};
 
   List<Expense> get expenses => List.unmodifiable(_expenses);
+  List<ExpenseCategory> get categories => List.unmodifiable([
+    ...ExpenseCategory.defaultCategories,
+    ..._customCategories,
+  ]);
 
   /// Initialize and load saved expenses from storage
   Future<void> init() async {
     try {
       _expenses = await _store.load();
+      final preferences = await SharedPreferences.getInstance();
+      final savedCategories =
+          preferences.getStringList('expense_custom_categories_v1') ?? [];
+      _customCategories =
+          savedCategories
+              .map(
+                (value) => ExpenseCategory.fromJson(
+                  jsonDecode(value) as Map<String, dynamic>,
+                ),
+              )
+              .toList();
+      final savedBudgets = preferences.getString('expense_monthly_budgets_v1');
+      if (savedBudgets != null && savedBudgets.isNotEmpty) {
+        final values = jsonDecode(savedBudgets) as Map<String, dynamic>;
+        _monthlyBudgets = values.map(
+          (key, value) => MapEntry(key, (value as num).toDouble()),
+        );
+      }
       _expenses.sort((a, b) => b.date.compareTo(a.date));
     } catch (e) {
       debugPrint('Error loading expenses: $e');
       _expenses = [];
     }
+    notifyListeners();
+  }
+
+  Future<ExpenseCategory> createCustomCategory(String name) async {
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) throw ArgumentError('Tên danh mục không được trống');
+    final existing = categories.where(
+      (category) => category.name.toLowerCase() == cleanName.toLowerCase(),
+    );
+    if (existing.isNotEmpty) return existing.first;
+
+    final category = ExpenseCategory.custom(
+      id: 'custom_${DateTime.now().microsecondsSinceEpoch}',
+      name: cleanName,
+    );
+    _customCategories.add(category);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList(
+      'expense_custom_categories_v1',
+      _customCategories.map((item) => jsonEncode(item.toJson())).toList(),
+    );
+    notifyListeners();
+    return category;
+  }
+
+  double budgetFor(String categoryId) => _monthlyBudgets[categoryId] ?? 0;
+
+  Map<ExpenseCategory, double> get activeBudgets {
+    return {
+      for (final category in categories)
+        if (budgetFor(category.id) > 0) category: budgetFor(category.id),
+    };
+  }
+
+  double spentThisMonthFor(String categoryId, {DateTime? referenceDate}) {
+    final reference = referenceDate ?? DateTime.now();
+    return _expenses
+        .where(
+          (expense) =>
+              expense.category.id == categoryId &&
+              expense.date.year == reference.year &&
+              expense.date.month == reference.month,
+        )
+        .fold(0.0, (sum, expense) => sum + expense.amount);
+  }
+
+  double remainingBudgetFor(String categoryId) {
+    return budgetFor(categoryId) - spentThisMonthFor(categoryId);
+  }
+
+  Future<void> setMonthlyBudget(String categoryId, double amount) async {
+    if (amount > 0) {
+      _monthlyBudgets[categoryId] = amount;
+    } else {
+      _monthlyBudgets.remove(categoryId);
+    }
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(
+      'expense_monthly_budgets_v1',
+      jsonEncode(_monthlyBudgets),
+    );
     notifyListeners();
   }
 

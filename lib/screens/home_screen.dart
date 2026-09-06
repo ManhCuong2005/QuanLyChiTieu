@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/database_service.dart';
+import '../services/app_update_service.dart';
 import '../widgets/expense_card.dart';
 import '../widgets/charts/custom_bar_chart.dart';
+import '../widgets/monthly_budget_section.dart';
 import 'camera_viewfinder_screen.dart';
 import 'add_expense_screen.dart';
 import 'expense_list_screen.dart';
@@ -10,8 +12,13 @@ import 'analytics_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final DatabaseService databaseService;
+  final bool autoCheckForUpdates;
 
-  const HomeScreen({super.key, required this.databaseService});
+  const HomeScreen({
+    super.key,
+    required this.databaseService,
+    this.autoCheckForUpdates = true,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -19,6 +26,83 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  bool _isCheckingUpdate = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoCheckForUpdates) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkForUpdate(silent: true);
+      });
+    }
+  }
+
+  Future<void> _checkForUpdate({required bool silent}) async {
+    if (_isCheckingUpdate) return;
+    setState(() => _isCheckingUpdate = true);
+    try {
+      final update = await AppUpdateService.checkForUpdate();
+      if (!mounted) return;
+
+      if (update == null) {
+        if (!silent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Bạn đang sử dụng phiên bản mới nhất.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder:
+            (dialogContext) => AlertDialog(
+              icon: const Icon(Icons.system_update_rounded, size: 40),
+              title: const Text('Có phiên bản mới'),
+              content: Text(
+                'Phiên bản ${update.latestVersion} đã sẵn sàng. '
+                'Bạn đang dùng phiên bản ${update.currentVersion}.\n\n'
+                '${update.releaseNotes.trim().isEmpty ? 'Bạn có muốn mở trang tải APK không?' : update.releaseNotes.trim()}',
+                maxLines: 10,
+                overflow: TextOverflow.ellipsis,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Để sau'),
+                ),
+                FilledButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(dialogContext);
+                    try {
+                      await AppUpdateService.openDownload(update);
+                    } catch (error) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(error.toString())));
+                    }
+                  },
+                  icon: const Icon(Icons.download_rounded),
+                  label: const Text('Tải bản mới'),
+                ),
+              ],
+            ),
+      );
+    } catch (error) {
+      if (!silent && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể kiểm tra cập nhật: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCheckingUpdate = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +182,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Kiểm tra cập nhật',
+            onPressed:
+                _isCheckingUpdate ? null : () => _checkForUpdate(silent: false),
+            icon:
+                _isCheckingUpdate
+                    ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(Icons.system_update_alt_rounded),
+          ),
           IconButton(
             tooltip: 'Thêm thủ công',
             icon: const Icon(Icons.add_circle_outline_rounded),
@@ -215,6 +311,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
+
+              MonthlyBudgetSection(databaseService: widget.databaseService),
+
+              const SizedBox(height: 16),
 
               // Quick Action Buttons
               Padding(

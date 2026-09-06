@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/expense.dart';
-import '../models/category.dart';
 import '../services/database_service.dart';
 import '../widgets/expense_card.dart';
 import 'add_expense_screen.dart';
@@ -100,7 +99,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                   },
                 ),
                 const SizedBox(width: 8),
-                ...ExpenseCategory.defaultCategories.map((cat) {
+                ...widget.databaseService.categories.map((cat) {
                   final isSelected = _selectedCategoryId == cat.id;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),

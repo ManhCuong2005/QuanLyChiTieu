@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/database_service.dart';
-import '../services/ocr_service.dart';
 import '../services/receipt_cropper.dart';
 import 'scan_receipt_screen.dart';
 
@@ -333,7 +332,7 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
     }
   }
 
-  void _navigateToReview({String? imagePath, String? sampleText}) {
+  void _navigateToReview({String? imagePath}) {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -341,74 +340,8 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
             (_) => ScanReceiptScreen(
               databaseService: widget.databaseService,
               initialImagePath: imagePath,
-              initialSampleText: sampleText,
             ),
       ),
-    );
-  }
-
-  /// Only show sample receipts when user explicitly taps the demo button
-  void _showSampleReceiptsDialog() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder:
-          (ctx) => Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.receipt_long_rounded, color: Color(0xFF6366F1)),
-                    SizedBox(width: 10),
-                    Text(
-                      'Hóa đơn mẫu thực tế (Demo)',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Chọn để thử nghiệm bóc tách OCR mà không cần chụp ảnh:',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 12),
-                ...OcrService.sampleReceipts.map((sample) {
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.receipt_rounded,
-                        color: Color(0xFF6366F1),
-                      ),
-                    ),
-                    title: Text(
-                      sample['title']!,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text('Hóa đơn ${sample['store']}'),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _navigateToReview(sampleText: sample['text']);
-                    },
-                  );
-                }),
-              ],
-            ),
-          ),
     );
   }
 
@@ -697,7 +630,7 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
                           ),
                         ),
 
-                        // Switch camera / Demo button
+                        // Switch camera
                         Column(
                           children: [
                             if (_cameras.length >= 2)
@@ -707,16 +640,10 @@ class _CameraViewfinderScreenState extends State<CameraViewfinderScreen>
                                 onTap: _switchCamera,
                               )
                             else
-                              _iconBtn(
-                                icon: Icons.receipt_long_rounded,
-                                size: 48,
-                                onTap: _showSampleReceiptsDialog,
-                              ),
+                              const SizedBox(width: 48, height: 48),
                             const SizedBox(height: 6),
                             Text(
-                              _cameras.length >= 2
-                                  ? 'Đổi camera'
-                                  : 'Hóa đơn mẫu',
+                              _cameras.length >= 2 ? 'Đổi camera' : '',
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 11,

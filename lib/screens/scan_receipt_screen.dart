@@ -9,17 +9,16 @@ import '../services/ocr_service.dart';
 import '../services/database_service.dart';
 import '../services/receipt_image_storage.dart';
 import '../widgets/receipt_image_preview.dart';
+import '../widgets/category_selector.dart';
 
 class ScanReceiptScreen extends StatefulWidget {
   final DatabaseService databaseService;
   final String? initialImagePath;
-  final String? initialSampleText;
 
   const ScanReceiptScreen({
     super.key,
     required this.databaseService,
     this.initialImagePath,
-    this.initialSampleText,
   });
 
   @override
@@ -49,8 +48,6 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.initialImagePath != null) {
         _processInitialPath(widget.initialImagePath!);
-      } else if (widget.initialSampleText != null) {
-        _processSampleText(widget.initialSampleText!);
       }
     });
   }
@@ -71,19 +68,6 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
-    }
-  }
-
-  void _processSampleText(String text) {
-    setState(() {
-      _isProcessing = true;
-    });
-    final result = OcrService.processReceiptText(text);
-    _applyParsedResult(result);
-    if (mounted) {
-      setState(() {
-        _isProcessing = false;
-      });
     }
   }
 
@@ -127,21 +111,6 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
     }
   }
 
-  void _processSampleReceipt(Map<String, String> sample) {
-    setState(() {
-      _isProcessing = true;
-      _pickedImagePath = null;
-    });
-
-    final text = sample['text']!;
-    final result = OcrService.processReceiptText(text);
-    _applyParsedResult(result);
-
-    setState(() {
-      _isProcessing = false;
-    });
-  }
-
   void _applyParsedResult(ReceiptResult result) {
     setState(() {
       _parsedResult = result;
@@ -149,9 +118,6 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       // Fill in extracted fields
       if (result.merchantName != null && result.merchantName!.isNotEmpty) {
         _merchantController.text = result.merchantName!;
-        _titleController.text = result.merchantName!;
-      } else {
-        _titleController.text = 'Chi tiêu hóa đơn';
       }
 
       if (result.totalAmount != null) {
@@ -215,7 +181,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       id: expenseId,
       title:
           _titleController.text.trim().isEmpty
-              ? _merchantController.text
+              ? _selectedCategory.name
               : _titleController.text.trim(),
       amount: amount,
       category: _selectedCategory,
@@ -374,61 +340,6 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
               const SizedBox(height: 14),
             ],
 
-            // Sample Receipts Section for Live Demo & Testing
-            ExpansionTile(
-              initiallyExpanded: _parsedResult == null,
-              leading: const Icon(
-                Icons.receipt_long_rounded,
-                color: Color(0xFF8B5CF6),
-              ),
-              title: const Text(
-                'Thử nghiệm hóa đơn mẫu (Live Demo)',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-              ),
-              subtitle: const Text(
-                'Bấm vào để thử nghiệm ngay không cần giấy hóa đơn',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children:
-                        OcrService.sampleReceipts.map((sample) {
-                          return ActionChip(
-                            avatar: const Icon(
-                              Icons.bolt_rounded,
-                              size: 16,
-                              color: Color(0xFF8B5CF6),
-                            ),
-                            label: Text(sample['title']!),
-                            onPressed:
-                                _isProcessing
-                                    ? null
-                                    : () => _processSampleReceipt(sample),
-                            backgroundColor: const Color(
-                              0xFF8B5CF6,
-                            ).withValues(alpha: 0.08),
-                            side: BorderSide(
-                              color: const Color(
-                                0xFF8B5CF6,
-                              ).withValues(alpha: 0.3),
-                            ),
-                          );
-                        }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
             // Loading Indicator
             if (_isProcessing) ...[
               const SizedBox(height: 24),
@@ -540,7 +451,8 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                     TextFormField(
                       controller: _titleController,
                       decoration: InputDecoration(
-                        labelText: 'Tiêu đề chi tiêu *',
+                        labelText: 'Tên khoản chi tiêu (không bắt buộc)',
+                        hintText: 'Để trống sẽ dùng tên danh mục',
                         prefixIcon: const Icon(Icons.title_rounded),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -548,12 +460,6 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                         filled: true,
                         fillColor: Colors.white,
                       ),
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return 'Vui lòng nhập tiêu đề';
-                        }
-                        return null;
-                      },
                     ),
 
                     const SizedBox(height: 12),
@@ -590,38 +496,12 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children:
-                          ExpenseCategory.defaultCategories.map((cat) {
-                            final isSelected = _selectedCategory.id == cat.id;
-                            return ChoiceChip(
-                              avatar: Icon(
-                                cat.icon,
-                                size: 16,
-                                color: isSelected ? Colors.white : cat.color,
-                              ),
-                              label: Text(cat.name),
-                              selected: isSelected,
-                              selectedColor: cat.color,
-                              labelStyle: TextStyle(
-                                color:
-                                    isSelected ? Colors.white : Colors.black87,
-                                fontWeight:
-                                    isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                              ),
-                              onSelected: (selected) {
-                                if (selected) {
-                                  setState(() {
-                                    _selectedCategory = cat;
-                                  });
-                                }
-                              },
-                            );
-                          }).toList(),
+                    CategorySelector(
+                      databaseService: widget.databaseService,
+                      selectedCategory: _selectedCategory,
+                      onSelected: (category) {
+                        setState(() => _selectedCategory = category);
+                      },
                     ),
 
                     const SizedBox(height: 16),

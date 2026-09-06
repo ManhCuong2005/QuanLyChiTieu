@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/expense.dart';
 import '../models/category.dart';
 import '../services/database_service.dart';
+import '../widgets/category_selector.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final DatabaseService databaseService;
@@ -88,9 +89,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       return;
     }
 
+    final enteredTitle = _titleController.text.trim();
+    final expenseTitle =
+        enteredTitle.isEmpty ? _selectedCategory.name : enteredTitle;
+
     if (widget.initialExpense != null) {
       final updated = widget.initialExpense!.copyWith(
-        title: _titleController.text.trim(),
+        title: expenseTitle,
         amount: amount,
         category: _selectedCategory,
         date: _selectedDate,
@@ -101,7 +106,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     } else {
       final newExpense = Expense(
         id: const Uuid().v4(),
-        title: _titleController.text.trim(),
+        title: expenseTitle,
         amount: amount,
         category: _selectedCategory,
         date: _selectedDate,
@@ -172,7 +177,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(
-                  labelText: 'Tên khoản chi tiêu *',
+                  labelText: 'Tên khoản chi tiêu (không bắt buộc)',
+                  hintText: 'Để trống sẽ dùng tên danh mục',
                   prefixIcon: const Icon(Icons.edit_note_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -180,12 +186,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   filled: true,
                   fillColor: Colors.white,
                 ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Vui lòng nhập tên khoản chi';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 14),
               TextFormField(
@@ -226,35 +226,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    ExpenseCategory.defaultCategories.map((cat) {
-                      final isSelected = _selectedCategory.id == cat.id;
-                      return ChoiceChip(
-                        avatar: Icon(
-                          cat.icon,
-                          size: 16,
-                          color: isSelected ? Colors.white : cat.color,
-                        ),
-                        label: Text(cat.name),
-                        selected: isSelected,
-                        selectedColor: cat.color,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _selectedCategory = cat;
-                            });
-                          }
-                        },
-                      );
-                    }).toList(),
+              CategorySelector(
+                databaseService: widget.databaseService,
+                selectedCategory: _selectedCategory,
+                onSelected: (category) {
+                  setState(() => _selectedCategory = category);
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(

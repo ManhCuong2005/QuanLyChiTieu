@@ -9,7 +9,12 @@ void main() {
     final dbService = DatabaseService();
     await dbService.init();
 
-    await tester.pumpWidget(ExpenseTrackerApp(databaseService: dbService));
+    await tester.pumpWidget(
+      ExpenseTrackerApp(
+        databaseService: dbService,
+        autoCheckForUpdates: false,
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Quản Lý Chi Tiêu OCR'), findsOneWidget);

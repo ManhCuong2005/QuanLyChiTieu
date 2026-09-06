@@ -107,5 +107,27 @@ Tong cong:                   190.000 VND
       expect(result.totalAmount, 190000.0);
       expect(result.suggestedCategory, ExpenseCategory.study.id);
     });
+
+    test('Suggests Housing for a room rental receipt', () {
+      const receipt = 'PHIEU THU TIEN TRO\nTien tro thang 9: 2.500.000 VND';
+      final result = ReceiptParser.parse(receipt);
+      expect(result.suggestedCategory, ExpenseCategory.housing.id);
+    });
+
+    test('Suggests Utilities for an electricity bill', () {
+      const receipt = 'EVN\nHoa don tien dien\nTong: 450.000 VND';
+      final result = ReceiptParser.parse(receipt);
+      expect(result.suggestedCategory, ExpenseCategory.utilities.id);
+    });
+
+    test('Preserves a custom category through JSON', () {
+      final category = ExpenseCategory.custom(
+        id: 'custom_pet',
+        name: 'Thú cưng',
+      );
+      final restored = ExpenseCategory.fromJson(category.toJson());
+      expect(restored, category);
+      expect(restored.name, 'Thú cưng');
+    });
   });
 }

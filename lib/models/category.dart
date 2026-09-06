@@ -57,9 +57,25 @@ class ExpenseCategory {
     color: Color(0xFF8B5CF6),
   );
 
+  static const ExpenseCategory housing = ExpenseCategory(
+    id: 'housing',
+    name: 'Tiền trọ',
+    englishName: 'Housing',
+    icon: Icons.home_rounded,
+    color: Color(0xFFEC4899),
+  );
+
+  static const ExpenseCategory utilities = ExpenseCategory(
+    id: 'utilities',
+    name: 'Điện & nước',
+    englishName: 'Utilities',
+    icon: Icons.bolt_rounded,
+    color: Color(0xFF06B6D4),
+  );
+
   static const ExpenseCategory other = ExpenseCategory(
     id: 'other',
-    name: 'Khác',
+    name: 'Chi nhỏ / Khác',
     englishName: 'Other',
     icon: Icons.category_rounded,
     color: Color(0xFF64748B),
@@ -71,8 +87,20 @@ class ExpenseCategory {
     travel,
     gear,
     entertainment,
+    housing,
+    utilities,
     other,
   ];
+
+  factory ExpenseCategory.custom({required String id, required String name}) {
+    return ExpenseCategory(
+      id: id,
+      name: name,
+      englishName: name,
+      icon: Icons.label_rounded,
+      color: const Color(0xFF14B8A6),
+    );
+  }
 
   static ExpenseCategory fromId(String id) {
     return defaultCategories.firstWhere(
@@ -103,6 +131,18 @@ class ExpenseCategory {
   };
 
   factory ExpenseCategory.fromJson(Map<String, dynamic> json) {
-    return fromId(json['id'] as String? ?? 'other');
+    final id = json['id'] as String? ?? 'other';
+    final known = defaultCategories.where((category) => category.id == id);
+    if (known.isNotEmpty) return known.first;
+    return ExpenseCategory.custom(
+      id: id,
+      name: json['name'] as String? ?? 'Danh mục riêng',
+    );
   }
+
+  @override
+  bool operator ==(Object other) => other is ExpenseCategory && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
