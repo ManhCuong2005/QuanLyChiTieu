@@ -10,14 +10,11 @@ void main() {
     await dbService.init();
 
     await tester.pumpWidget(
-      ExpenseTrackerApp(
-        databaseService: dbService,
-        autoCheckForUpdates: false,
-      ),
+      ExpenseTrackerApp(databaseService: dbService, autoCheckForUpdates: false),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Quản Lý Chi Tiêu OCR'), findsOneWidget);
+    expect(find.text('Nguyễn Mạnh Cường - Chi Tiêu'), findsOneWidget);
     expect(find.text('Quét Hóa Đơn (OCR)'), findsOneWidget);
   });
 }

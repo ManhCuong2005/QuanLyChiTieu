@@ -3,17 +3,29 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/expense.dart';
 import '../models/category.dart';
+import '../models/debt.dart';
+import '../models/personal_task.dart';
 import '../widgets/charts/custom_bar_chart.dart';
 import 'receipt_image_storage.dart';
 import 'expense_store.dart';
+import 'notification_service.dart';
 
 class DatabaseService extends ChangeNotifier {
   final ExpenseStore _store = ExpenseStore();
   List<Expense> _expenses = [];
   List<ExpenseCategory> _customCategories = [];
   Map<String, double> _monthlyBudgets = {};
+  List<Debt> _debts = [];
+  static const _debtsStorageKey = 'expense_debts_v1';
+  static const _personalTasksStorageKey = 'personal_tasks_v1';
+  static const _qrImageStorageKey = 'personal_qr_image_v1';
+  List<PersonalTask> _personalTasks = [];
+  String? _qrImageBase64;
 
   List<Expense> get expenses => List.unmodifiable(_expenses);
+  List<Debt> get debts => List.unmodifiable(_debts);
+  List<PersonalTask> get personalTasks => List.unmodifiable(_personalTasks);
+  String? get qrImageBase64 => _qrImageBase64;
   List<ExpenseCategory> get categories => List.unmodifiable([
     ...ExpenseCategory.defaultCategories,
     ..._customCategories,
@@ -41,11 +53,128 @@ class DatabaseService extends ChangeNotifier {
           (key, value) => MapEntry(key, (value as num).toDouble()),
         );
       }
+      final savedDebts = preferences.getString(_debtsStorageKey);
+      if (savedDebts != null && savedDebts.isNotEmpty) {
+        _debts =
+            (jsonDecode(savedDebts) as List<dynamic>)
+                .map((item) => Debt.fromJson(item as Map<String, dynamic>))
+                .where((item) => item.balance > 0)
+                .toList();
+      }
+      final savedTasks = preferences.getString(_personalTasksStorageKey);
+      if (savedTasks != null && savedTasks.isNotEmpty) {
+        _personalTasks =
+            (jsonDecode(savedTasks) as List<dynamic>)
+                .map(
+                  (item) => PersonalTask.fromJson(item as Map<String, dynamic>),
+                )
+                .toList();
+      }
+      _qrImageBase64 = preferences.getString(_qrImageStorageKey);
+      _debts.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       _expenses.sort((a, b) => b.date.compareTo(a.date));
     } catch (e) {
       debugPrint('Error loading expenses: $e');
       _expenses = [];
     }
+    notifyListeners();
+  }
+
+  Future<void> setQrImage(String imageBase64) async {
+    _qrImageBase64 = imageBase64;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_qrImageStorageKey, imageBase64);
+    notifyListeners();
+  }
+
+  Future<void> _savePersonalTasks() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(
+      _personalTasksStorageKey,
+      jsonEncode(_personalTasks.map((item) => item.toJson()).toList()),
+    );
+  }
+
+  Future<void> addPersonalTask(PersonalTask task) async {
+    _personalTasks.add(task);
+    await _savePersonalTasks();
+    await NotificationService.instance.scheduleTask(task);
+    notifyListeners();
+  }
+
+  Future<void> updatePersonalTask(PersonalTask task) async {
+    final index = _personalTasks.indexWhere((item) => item.id == task.id);
+    if (index < 0) return;
+    _personalTasks[index] = task;
+    await _savePersonalTasks();
+    await NotificationService.instance.scheduleTask(task);
+    notifyListeners();
+  }
+
+  Future<void> deletePersonalTask(String id) async {
+    _personalTasks.removeWhere((item) => item.id == id);
+    await _savePersonalTasks();
+    await NotificationService.instance.cancelTask(id);
+    notifyListeners();
+  }
+
+  Future<void> movePersonalTaskToTop(String id) async {
+    final index = _personalTasks.indexWhere((item) => item.id == id);
+    if (index <= 0) return;
+    final task = _personalTasks.removeAt(index);
+    _personalTasks.insert(0, task);
+    await _savePersonalTasks();
+    notifyListeners();
+  }
+
+  Future<void> _saveDebts() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(
+      _debtsStorageKey,
+      jsonEncode(_debts.map((item) => item.toJson()).toList()),
+    );
+  }
+
+  Future<void> addDebt(Debt debt) async {
+    _debts.insert(0, debt);
+    await _saveDebts();
+    notifyListeners();
+  }
+
+  Future<void> adjustDebt(
+    String id,
+    double signedAmount, {
+    String note = '',
+  }) async {
+    final index = _debts.indexWhere((item) => item.id == id);
+    if (index < 0 || signedAmount == 0) return;
+    final debt = _debts[index];
+    final amount =
+        signedAmount < 0
+            ? -signedAmount.abs().clamp(0, debt.balance).toDouble()
+            : signedAmount;
+    final transaction = DebtTransaction(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      amount: amount,
+      note: note,
+      createdAt: DateTime.now(),
+    );
+    final updated = debt.copyWith(
+      transactions: [...debt.transactions, transaction],
+    );
+    if (updated.balance <= 0) {
+      _debts.removeAt(index);
+    } else {
+      _debts[index] = updated;
+      _debts.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    }
+    await _saveDebts();
+    notifyListeners();
+  }
+
+  Future<void> settleDebt(String id) async {
+    _debts.removeWhere((item) => item.id == id);
+    await _saveDebts();
     notifyListeners();
   }
 

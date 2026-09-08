@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'services/database_service.dart';
 import 'screens/home_screen.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final databaseService = DatabaseService();
   await databaseService.init();
+  await NotificationService.instance.init();
+  for (final task in databaseService.personalTasks) {
+    await NotificationService.instance.scheduleTask(task);
+  }
 
   runApp(ExpenseTrackerApp(databaseService: databaseService));
 }

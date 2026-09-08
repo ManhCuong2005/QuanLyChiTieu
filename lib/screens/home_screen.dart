@@ -9,6 +9,8 @@ import 'camera_viewfinder_screen.dart';
 import 'add_expense_screen.dart';
 import 'expense_list_screen.dart';
 import 'analytics_screen.dart';
+import 'debts_screen.dart';
+import 'personal_hub_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final DatabaseService databaseService;
@@ -113,6 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildDashboardTab(context),
           ExpenseListScreen(databaseService: widget.databaseService),
           AnalyticsScreen(databaseService: widget.databaseService),
+          DebtsScreen(databaseService: widget.databaseService),
+          PersonalHubScreen(databaseService: widget.databaseService),
         ];
 
         return Scaffold(
@@ -140,18 +144,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 selectedIcon: Icon(Icons.pie_chart_rounded),
                 label: 'Thống kê',
               ),
+              NavigationDestination(
+                icon: Icon(Icons.handshake_outlined),
+                selectedIcon: Icon(Icons.handshake_rounded),
+                label: 'Ghi nợ',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline_rounded),
+                selectedIcon: Icon(Icons.person_rounded),
+                label: 'Tôi',
+              ),
             ],
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _openScanReceiptScreen(context),
-            icon: const Icon(Icons.document_scanner_rounded),
-            label: const Text(
-              'Quét Hóa Đơn (OCR)',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            backgroundColor: const Color(0xFF6366F1),
-            foregroundColor: Colors.white,
-          ),
+          floatingActionButton:
+              _currentIndex >= 3
+                  ? null
+                  : FloatingActionButton.extended(
+                    onPressed: () => _openScanReceiptScreen(context),
+                    icon: const Icon(Icons.document_scanner_rounded),
+                    label: const Text(
+                      'Quét Hóa Đơn (OCR)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: const Color(0xFF6366F1),
+                    foregroundColor: Colors.white,
+                  ),
         );
       },
     );
@@ -176,24 +193,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(width: 8),
             Text(
-              'Quản Lý Chi Tiêu OCR',
+              'Nguyễn Mạnh Cường - Chi Tiêu',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'Kiểm tra cập nhật',
-            onPressed:
-                _isCheckingUpdate ? null : () => _checkForUpdate(silent: false),
-            icon:
-                _isCheckingUpdate
-                    ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                    : const Icon(Icons.system_update_alt_rounded),
-          ),
           IconButton(
             tooltip: 'Thêm thủ công',
             icon: const Icon(Icons.add_circle_outline_rounded),
