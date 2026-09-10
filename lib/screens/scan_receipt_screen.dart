@@ -125,7 +125,14 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       }
 
       if (result.transactionDate != null) {
-        _selectedDate = result.transactionDate!;
+        final detectedDate = result.transactionDate!;
+        _selectedDate = DateTime(
+          detectedDate.year,
+          detectedDate.month,
+          detectedDate.day,
+          _selectedDate.hour,
+          _selectedDate.minute,
+        );
       }
 
       if (result.suggestedCategory != null) {
@@ -149,6 +156,24 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
           picked.day,
           _selectedDate.hour,
           _selectedDate.minute,
+        );
+      });
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_selectedDate),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+          picked.hour,
+          picked.minute,
         );
       });
     }
@@ -209,7 +234,8 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
+    final dateFormatter = DateFormat('dd/MM/yyyy');
+    final timeFormatter = DateFormat('HH:mm');
 
     return Scaffold(
       appBar: AppBar(
@@ -464,25 +490,53 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
 
                     const SizedBox(height: 12),
 
-                    // Date & Time Picker
-                    InkWell(
-                      onTap: _selectDate,
-                      borderRadius: BorderRadius.circular(12),
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'Ngày giao dịch',
-                          prefixIcon: const Icon(Icons.calendar_today_rounded),
-                          border: OutlineInputBorder(
+                    // Date & Time Pickers
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: InkWell(
+                            onTap: _selectDate,
                             borderRadius: BorderRadius.circular(12),
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: 'Ngày giao dịch',
+                                prefixIcon: const Icon(
+                                  Icons.calendar_today_rounded,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              child: Text(dateFormatter.format(_selectedDate)),
+                            ),
                           ),
-                          filled: true,
-                          fillColor: Colors.white,
                         ),
-                        child: Text(
-                          dateFormatter.format(_selectedDate),
-                          style: const TextStyle(fontSize: 15),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: InkWell(
+                            onTap: _selectTime,
+                            borderRadius: BorderRadius.circular(12),
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: 'Giờ',
+                                prefixIcon: const Icon(
+                                  Icons.access_time_rounded,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              child: Text(timeFormatter.format(_selectedDate)),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
 
                     const SizedBox(height: 16),

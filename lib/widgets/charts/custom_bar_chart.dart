@@ -14,12 +14,14 @@ class AnimatedBarChart extends StatefulWidget {
   final List<BarData> data;
   final double height;
   final Color primaryColor;
+  final ValueChanged<BarData?>? onSelectionChanged;
 
   const AnimatedBarChart({
     super.key,
     required this.data,
     this.height = 220,
     this.primaryColor = const Color(0xFF3B82F6),
+    this.onSelectionChanged,
   });
 
   @override
@@ -141,11 +143,17 @@ class _AnimatedBarChartState extends State<AnimatedBarChart>
                                 ? null
                                 : tappedIndex;
                       });
+                      widget.onSelectionChanged?.call(
+                        _selectedIndex == null
+                            ? null
+                            : widget.data[_selectedIndex!],
+                      );
                     }
                   } else {
                     setState(() {
                       _selectedIndex = null;
                     });
+                    widget.onSelectionChanged?.call(null);
                   }
                 },
                 child: AnimatedBuilder(

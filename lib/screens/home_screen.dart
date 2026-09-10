@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../models/expense.dart';
 import '../services/database_service.dart';
 import '../services/app_update_service.dart';
 import '../widgets/expense_card.dart';
@@ -29,6 +30,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   bool _isCheckingUpdate = false;
+  DateTime? _selectedDashboardDate;
 
   @override
   void initState() {
@@ -180,8 +182,18 @@ class _HomeScreenState extends State<HomeScreen> {
       symbol: 'đ',
     );
     final totalSpending = widget.databaseService.totalSpending;
-    final recentExpenses = widget.databaseService.expenses.take(4).toList();
     final barData = widget.databaseService.getLast7DaysData();
+    final selectedExpenses =
+        _selectedDashboardDate == null
+            ? const <Expense>[]
+            : widget.databaseService.expenses
+                .where(
+                  (expense) =>
+                      expense.date.year == _selectedDashboardDate!.year &&
+                      expense.date.month == _selectedDashboardDate!.month &&
+                      expense.date.day == _selectedDashboardDate!.day,
+                )
+                .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -409,71 +421,65 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        AnimatedBarChart(data: barData, height: 180),
+                        AnimatedBarChart(
+                          data: barData,
+                          height: 180,
+                          onSelectionChanged: (item) {
+                            setState(() {
+                              _selectedDashboardDate = item?.date;
+                            });
+                          },
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              // Recent Transactions Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Giao dịch gần đây',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+              if (_selectedDashboardDate != null) ...[
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Giao dịch ngày ${DateFormat('dd/MM/yyyy').format(_selectedDashboardDate!)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _currentIndex = 1; // Switch to full list
-                        });
-                      },
-                      child: const Text('Xem tất cả'),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-
-              // Recent Transactions List
-              if (recentExpenses.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(
-                    child: Text(
-                      'Chưa có chi tiêu nào. Hãy quét hóa đơn đầu tiên!',
+                if (selectedExpenses.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(
+                      child: Text('Không có giao dịch nào trong ngày này.'),
+                    ),
+                  )
+                else
+                  ...selectedExpenses.map(
+                    (expense) => ExpenseCard(
+                      expense: expense,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => AddExpenseScreen(
+                                  databaseService: widget.databaseService,
+                                  initialExpense: expense,
+                                ),
+                          ),
+                        );
+                      },
+                      onDelete: () {
+                        widget.databaseService.deleteExpense(expense.id);
+                      },
                     ),
                   ),
-                )
-              else
-                ...recentExpenses.map((expense) {
-                  return ExpenseCard(
-                    expense: expense,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => AddExpenseScreen(
-                                databaseService: widget.databaseService,
-                                initialExpense: expense,
-                              ),
-                        ),
-                      );
-                    },
-                    onDelete: () {
-                      widget.databaseService.deleteExpense(expense.id);
-                    },
-                  );
-                }),
+              ],
             ],
           ),
         ),
